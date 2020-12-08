@@ -9,7 +9,7 @@ public class UserDao {
         UserDao dao = new UserDao();
 
         User user = new User();
-        user.setId("testId1");
+        user.setId("testId1234");
         user.setName("테스트이름");
         user.setPassword("1234");
 
@@ -24,10 +24,16 @@ public class UserDao {
         System.out.println(user2.getId()+" 조회 성공");
 
     }
+
+    /**
+     *      리팩토링 관심사항
+     */
     public void add(User user) throws ClassNotFoundException, SQLException {
+        // 1. DB와 연결을 위한 Connection을 가져옴
         Class.forName("com.mysql.cj.jdbc.Driver");
         Connection c = DriverManager.getConnection("jdbc:mysql://localhost/toby?characterEncoding=UTF-8&serverTimezone=UTC", "root", "root");
 
+        // 2. 사용자 등록을 위해 DB에 보낼 SQL 문장을 담을 Statement 생성 후 실행
         PreparedStatement ps = c.prepareStatement("INSERT INTO users(id, name, password) values(?, ?, ?)");
 
         ps.setString(1, user.getId());
@@ -36,6 +42,7 @@ public class UserDao {
 
         ps.executeUpdate();
 
+        // 3. 리소스 오브젝트 닫기
         ps.close();
         c.close();
 
