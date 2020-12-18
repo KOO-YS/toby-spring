@@ -1,6 +1,7 @@
 package com.training.spring.dao;
 
 import com.training.spring.domain.User;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 import java.sql.*;
 
@@ -44,17 +45,46 @@ public class UserDao {
         ps.setString(1, id);
 
         ResultSet rs = ps.executeQuery();
-        rs.next();
-        User user = new User();
-        user.setId(rs.getString("id"));
-        user.setName(rs.getString("name"));
-        user.setPassword(rs.getString("password"));
+        User user = null;
+        if(rs.next()) {
+            user = new User();
+            user.setId(rs.getString("id"));
+            user.setName(rs.getString("name"));
+            user.setPassword(rs.getString("password"));
+        }
 
+        // 일치하는 데이터가 없다면 예외 발생
+        if(user == null) throw new EmptyResultDataAccessException(1);
+        
         rs.close();
         ps.close();
         c.close();
 
         return user;
     }
-    
+
+    public void deleteAll() throws SQLException, ClassNotFoundException {
+        Connection c = connectionMaker.makeNewConnection();
+        PreparedStatement ps = c.prepareStatement("DELETE FROM users");
+
+        ps.executeUpdate();
+
+        ps.close();
+        c.close();
+    }
+
+    public int getCount() throws SQLException, ClassNotFoundException {
+        Connection c = connectionMaker.makeNewConnection();
+        PreparedStatement ps = c.prepareStatement("SELECT COUNT(*) FROM users");
+
+        ResultSet rs = ps.executeQuery();
+        rs.next();
+        int count = rs.getInt(1);
+
+        rs.close();
+        ps.close();
+        c.close();
+
+        return count;
+    }
 }
