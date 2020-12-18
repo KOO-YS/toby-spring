@@ -9,10 +9,11 @@ public class UserDao {
 
     private ConnectionMaker connectionMaker;
 
-//    @Deprecated
-//    public UserDao(ConnectionMaker connectionMaker){
-//        this.connectionMaker = connectionMaker;
-//    }
+    private DataSource dataSource;
+
+    public void setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     // 기존 생성자 대신 set 메서드 추가
     public void setConnectionMaker(ConnectionMaker connectionMaker) {
@@ -20,7 +21,7 @@ public class UserDao {
     }
 
     public void add(User user) throws ClassNotFoundException, SQLException {
-        Connection c = connectionMaker.makeNewConnection(); // -> FIXME : 다른 클래스의 정보를 메소드 내에서 사용 중 -> SimpleConnectionMaker에 종속적
+        Connection c = dataSource.getConnection();
 
         PreparedStatement ps = c.prepareStatement("INSERT INTO users(id, name, password) values(?, ?, ?)");
 
