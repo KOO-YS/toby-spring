@@ -21,7 +21,8 @@ public class UserDao {
     }
 
     public void add(User user) throws ClassNotFoundException, SQLException {
-        Connection c = dataSource.getConnection();
+//        Connection c = dataSource.getConnection();    FIXME : DataSource로 변환 필요
+        Connection c = connectionMaker.makeNewConnection();
 
         PreparedStatement ps = c.prepareStatement("INSERT INTO users(id, name, password) values(?, ?, ?)");
 

@@ -13,7 +13,7 @@ public class DaoFactory {
     public DataSource dataSource() throws ClassNotFoundException {
         SimpleDriverDataSource dataSource = new SimpleDriverDataSource();
         // DB 연결정보를 수정자 메소드를 통해 넣어준다 [오브젝트 레벨에서 DB 연결 방식]
-        dataSource.setDriverClass(com.mysql.cj.jdbc.Driver.class);     // Cannot resolve symbol 'Driver' -> File -> invalidate Caches/restart
+//        dataSource.setDriverClass(com.mysql.cj.jdbc.Driver.class);     // Cannot resolve symbol 'Driver' -> File -> invalidate Caches/restart
         dataSource.setUrl("jdbc:mysql://localhost/toby?characterEncoding=UTF-8&serverTimezone=UTC");
         dataSource.setUsername("root");
         dataSource.setPassword("root");
@@ -29,8 +29,8 @@ public class DaoFactory {
     @Bean               // -> 오브젝트 생성 메소드를 위함
     public UserDao userDao(){
         UserDao userDao = new UserDao();
-//        userDao.setConnectionMaker(connectionMaker());
-        userDao.setDataSource(dataSource());
+        userDao.setConnectionMaker(connectionMaker());
+//        userDao.setDataSource(dataSource());
         return userDao;
 //        return new UserDao(connectionMaker());      // 이 메소드 안에서 connection 정보를 바꿀 일이 없어졌다
     }
