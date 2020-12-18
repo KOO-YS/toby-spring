@@ -9,7 +9,13 @@ public class UserDao {
 
     private ConnectionMaker connectionMaker;
 
-    public UserDao(ConnectionMaker connectionMaker){
+//    @Deprecated
+//    public UserDao(ConnectionMaker connectionMaker){
+//        this.connectionMaker = connectionMaker;
+//    }
+
+    // 기존 생성자 대신 set 메서드 추가
+    public void setConnectionMaker(ConnectionMaker connectionMaker) {
         this.connectionMaker = connectionMaker;
     }
 

@@ -13,6 +13,9 @@ public class DaoFactory {
 
     @Bean               // -> 오브젝트 생성 메소드를 위함
     public UserDao userDao(){
-        return new UserDao(connectionMaker());      // 이 메소드 안에서 connection 정보를 바꿀 일이 없어졌다
+        UserDao userDao = new UserDao();
+        userDao.setConnectionMaker(connectionMaker());
+        return userDao;
+//        return new UserDao(connectionMaker());      // 이 메소드 안에서 connection 정보를 바꿀 일이 없어졌다
     }
 }
