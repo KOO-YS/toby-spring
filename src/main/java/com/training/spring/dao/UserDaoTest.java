@@ -14,8 +14,8 @@ public class UserDaoTest {
         UserDao dao = context.getBean("userDao", UserDao.class);
 
         User user = new User();
-        user.setId("2Id7");
-        user.setName("테스트이름");
+        user.setId("confirmId");
+        user.setName("testName");
         user.setPassword("1234");
 
         dao.add(user);
@@ -23,10 +23,16 @@ public class UserDaoTest {
         System.out.println(user.getId()+" 등록 성공");
 
         User user2 = dao.get(user.getId());
-        System.out.println(user2.getName());
-        System.out.println(user2.getPassword());
 
-        System.out.println(user2.getId()+" 조회 성공");
+        // 값이 일치하는지 테스트
+        if(!user.getName().equals(user2.getName())){
+            System.out.println("test fail : Name");
+        } else if(!user.getPassword().equals(user2.getPassword())){
+            System.out.println("test fail : Password");
+        } else {
+            System.out.println("test success");
+            System.out.println(user2.toString());
+        }
 
     }
 }
