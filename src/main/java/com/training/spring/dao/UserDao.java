@@ -1,6 +1,8 @@
 package com.training.spring.dao;
 
 import com.training.spring.domain.User;
+import com.training.spring.strategy.DeleteAllStatement;
+import com.training.spring.strategy.StatementStrategy;
 import org.springframework.dao.EmptyResultDataAccessException;
 
 import java.sql.*;
@@ -57,33 +59,8 @@ public class UserDao {
     }
 
     public void deleteAll() throws SQLException, ClassNotFoundException {
-        Connection c = null;
-        PreparedStatement ps = null;
-        try {
-            c = connectionMaker.makeNewConnection();
-            ps = c.prepareStatement("DELETE FROM users");
-
-            ps.executeUpdate();
-
-        } catch (SQLException e){
-            throw e;
-
-        } finally {
-            if(ps != null){
-                try {
-                    ps.close();
-                } catch (SQLException e){
-                    throw e;
-                }
-            }
-            if(c != null){
-                try {
-                    c.close();
-                } catch (SQLException e){
-                    throw e;
-                }
-            }
-        }
+        StatementStrategy st = new DeleteAllStatement();        // 전략 오브젝트 생성
+        jdbcContextWithStatementStrategy(st);                   // 컨텍스트는 전략 오브젝트 제공받음
     }
 
     public User get(String id) throws ClassNotFoundException, SQLException {
@@ -175,5 +152,39 @@ public class UserDao {
             }
         }
         return count;
+    }
+
+    /*
+        변하지 않는 부분. context
+        @Param 클라이언트가 컨텍스트를 호출할 때 넘겨줄 전략 파라미터
+     */
+    public void jdbcContextWithStatementStrategy(StatementStrategy stmt) throws SQLException, ClassNotFoundException {
+
+        Connection c = null;
+        PreparedStatement ps = null;
+        try {
+            c = connectionMaker.makeNewConnection();
+            ps = stmt.makePreparedStatement(c);
+            ps.executeUpdate();
+
+        } catch (SQLException e){
+            throw e;
+
+        } finally {
+            if(ps != null){
+                try {
+                    ps.close();
+                } catch (SQLException e){
+                    throw e;
+                }
+            }
+            if(c != null){
+                try {
+                    c.close();
+                } catch (SQLException e){
+                    throw e;
+                }
+            }
+        }
     }
 }
