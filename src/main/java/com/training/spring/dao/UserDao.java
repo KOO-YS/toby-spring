@@ -11,47 +11,43 @@ import java.sql.*;
 // 클래스 분리로 인한 상속 제거
 public class UserDao {
 
+    // JdbcContext를 DI 받도록 만든다
+    private JdbcContext jdbcContext;
+    public void setJdbcContext(JdbcContext jdbcContext){
+        this.jdbcContext = jdbcContext;
+    }
     private ConnectionMaker connectionMaker;
 
-    private DataSource dataSource;
-
-    public void setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    // 기존 생성자 대신 set 메서드 추가
     public void setConnectionMaker(ConnectionMaker connectionMaker) {
         this.connectionMaker = connectionMaker;
     }
 
     public void add(User user) throws ClassNotFoundException, SQLException {
-//            StatementStrategy st = new AddStatement(user);           // 전략 오브젝트에 추가적인 User 정보 전달 !
-        // 익명 클래스로 바로 구현
-        StatementStrategy st = new StatementStrategy() {
-            @Override
-            public PreparedStatement makePreparedStatement(Connection c) throws SQLException {
-                PreparedStatement ps = c.prepareStatement("INSERT INTO users(id, name, password) VALUES(?,?,?)");
+        this.jdbcContext.workWithStatementStrategy(
+            new StatementStrategy() {
+                @Override
+                public PreparedStatement makePreparedStatement(Connection c) throws SQLException {
+                    PreparedStatement ps = c.prepareStatement("INSERT INTO users(id, name, password) VALUES(?,?,?)");
 
-                ps.setString(1, user.getId());          // user 정보를 따로 선언하지 않아도 된다
-                ps.setString(2, user.getName());
-                ps.setString(3, user.getPassword());
-                return ps;
+                    ps.setString(1, user.getId());          // user 정보를 따로 선언하지 않아도 된다
+                    ps.setString(2, user.getName());
+                    ps.setString(3, user.getPassword());
+                    return ps;
+                }
             }
-        };
-            jdbcContextWithStatementStrategy(st);
+        );
     }
 
     public void deleteAll() throws SQLException, ClassNotFoundException {
-//        StatementStrategy st = new DeleteAllStatement();        // 전략 오브젝트 생성
-        // 익명 클래스를 이용한 바로 구현
-        StatementStrategy st = new StatementStrategy() {
-            @Override
-            public PreparedStatement makePreparedStatement(Connection c) throws SQLException {
-                PreparedStatement ps = c.prepareStatement("DELETE FROM users");
-                return ps;
+        this.jdbcContext.workWithStatementStrategy(
+                 new StatementStrategy() {
+                @Override
+                public PreparedStatement makePreparedStatement(Connection c) throws SQLException {
+                    PreparedStatement ps = c.prepareStatement("DELETE FROM users");
+                    return ps;
+                }
             }
-        };
-        jdbcContextWithStatementStrategy(st);                   // 컨텍스트는 전략 오브젝트 제공받음
+        );
     }
 
     public User get(String id) throws ClassNotFoundException, SQLException {
