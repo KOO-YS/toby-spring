@@ -28,8 +28,15 @@ public class DaoFactory {
 
     @Bean               // -> 오브젝트 생성 메소드를 위함
     public UserDao userDao(){
+
+        // delete & add 를 위한 
+        JdbcContext jdbcContext = new JdbcContext();
+        jdbcContext.setConnectionMaker(connectionMaker());
+        
+        // 기존 메소드들을 위해 남겨둠
         UserDao userDao = new UserDao();
         userDao.setConnectionMaker(connectionMaker());
+        userDao.setJdbcContext(jdbcContext);        // userDao에 jdbcContext 연결
 //        userDao.setDataSource(dataSource());
         return userDao;
 //        return new UserDao(connectionMaker());      // 이 메소드 안에서 connection 정보를 바꿀 일이 없어졌다
