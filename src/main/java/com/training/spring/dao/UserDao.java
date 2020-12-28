@@ -39,15 +39,7 @@ public class UserDao {
     }
 
     public void deleteAll() throws SQLException, ClassNotFoundException {
-        this.jdbcContext.workWithStatementStrategy(
-                 new StatementStrategy() {
-                @Override
-                public PreparedStatement makePreparedStatement(Connection c) throws SQLException {
-                    PreparedStatement ps = c.prepareStatement("DELETE FROM users");
-                    return ps;
-                }
-            }
-        );
+        this.jdbcContext.executeSql("DELETE FROM users");
     }
 
     public User get(String id) throws ClassNotFoundException, SQLException {
