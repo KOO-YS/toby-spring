@@ -2,11 +2,16 @@ package com.training.spring.dao;
 
 import com.training.spring.domain.User;
 import com.training.spring.strategy.StatementStrategy;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.ResultSetExtractor;
+import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.util.List;
 
 // 클래스 분리로 인한 상속 제거
 public class UserDao {
@@ -18,11 +23,20 @@ public class UserDao {
 
     private ConnectionMaker connectionMaker;
 
-    private DataSource dataSource;
+    // 중복 추출
+    private RowMapper<User> userMapper = new RowMapper<User>() {
+        @Override
+        public User mapRow(ResultSet rs, int rowNum) throws SQLException {
+            User user = new User();
+            user.setId(rs.getString("id"));
+            user.setName(rs.getString("name"));
+            user.setPassword(rs.getString("password"));
+            return user;
+        }
+    };
 
     public void setDataSource(DataSource dataSource){
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.dataSource = dataSource;
     }
 
     public void setJdbcContext(JdbcContext jdbcContext){
@@ -33,150 +47,42 @@ public class UserDao {
         this.connectionMaker = connectionMaker;
     }
 
-    public void add(User user) throws ClassNotFoundException, SQLException {
-        this.jdbcContext.workWithStatementStrategy(
-            new StatementStrategy() {
-                @Override
-                public PreparedStatement makePreparedStatement(Connection c) throws SQLException {
-                    PreparedStatement ps = c.prepareStatement("INSERT INTO users(id, name, password) VALUES(?,?,?)");
-
-                    ps.setString(1, user.getId());          // user 정보를 따로 선언하지 않아도 된다
-                    ps.setString(2, user.getName());
-                    ps.setString(3, user.getPassword());
-                    return ps;
-                }
-            }
-        );
+    public void add(User user){
+        // Spring에서 지원해주는 Jdbc Template 사용
+        this.jdbcTemplate.update("INSERT INTO users(id, name, password) VALUES(?,?,?)", user.getId(), user.getName(), user.getPassword());
     }
 
-    public void deleteAll() throws SQLException, ClassNotFoundException {
-        this.jdbcContext.executeSql("DELETE FROM users");
+    public void deleteAll(){
+        // Spring에서 지원해주는 Jdbc Template 사용
+        this.jdbcTemplate.update("DELETE FROM users");
     }
 
-    public User get(String id) throws ClassNotFoundException, SQLException {
-        Connection c = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        User user = null;
-        try {
-            c = connectionMaker.makeNewConnection();
-            ps = c.prepareStatement("SELECT * FROM users WHERE id = ?");
-            ps.setString(1, id);
 
-            rs = ps.executeQuery();
-            if(rs.next()) {
-                user = new User();
-                user.setId(rs.getString("id"));
-                user.setName(rs.getString("name"));
-                user.setPassword(rs.getString("password"));
-            }
-
-            // 일치하는 데이터가 없다면 예외 발생
-            if(user == null) throw new EmptyResultDataAccessException(1);
-
-        } catch (SQLException e){
-            throw e;
-
-        } finally {
-            if(rs != null){
-                try {
-                    rs.close();
-                } catch (SQLException e){
-                    throw e;
-                }
-            }
-            if(ps != null){
-                try {
-                    ps.close();
-                } catch (SQLException e){
-                    throw e;
-                }
-            }
-            if(c != null){
-                try {
-                    c.close();
-                } catch (SQLException e){
-                    throw e;
-                }
-            }
-        }
-
-        return user;
+    public User get(String id){
+        // Spring에서 지원해주는 Jdbc Template 사용
+        return this.jdbcTemplate.queryForObject("SELECT * FROM users WHERE id = ?", new Object[]{id}, this.userMapper);
     }
 
-    public int getCount() throws SQLException, ClassNotFoundException {
-        Connection c = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        int count = 0;
-        try {
-            c = connectionMaker.makeNewConnection();
-            ps = c.prepareStatement("SELECT COUNT(*) FROM users");
-
-            rs = ps.executeQuery();
-            rs.next();
-            count = rs.getInt(1);
-
-        } catch (SQLException e){
-            throw e;
-
-        } finally {
-            if(rs != null){
-                try {
-                    rs.close();
-                } catch (SQLException e){
-                    throw e;
-                }
-            }
-            if(ps != null){
-                try {
-                    ps.close();
-                } catch (SQLException e){
-                    throw e;
-                }
-            }
-            if(c != null){
-                try {
-                    c.close();
-                } catch (SQLException e){
-                    throw e;
-                }
-            }
-        }
-        return count;
+    public int getCount(){
+        // Spring에서 지원해주는 Jdbc Template 사용 1
+//        return this.jdbcTemplate.query(new PreparedStatementCreator() {
+//            @Override
+//            public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+//                return con.prepareStatement("SELECT COUNT(*) FROM users");
+//            }
+//        }, new ResultSetExtractor<Integer>() {
+//            @Override
+//            public Integer extractData(ResultSet rs) throws SQLException, DataAccessException {
+//                rs.next();
+//                return rs.getInt(1);
+//            }
+//        });
+        // Spring에서 지원해주는 Jdbc Template 사용 2
+        return this.jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.TYPE);
     }
 
-    /*
-        변하지 않는 부분. context
-        @Param 클라이언트가 컨텍스트를 호출할 때 넘겨줄 전략 파라미터
-     */
-    public void jdbcContextWithStatementStrategy(StatementStrategy stmt) throws SQLException, ClassNotFoundException {
-
-        Connection c = null;
-        PreparedStatement ps = null;
-        try {
-            c = connectionMaker.makeNewConnection();
-            ps = stmt.makePreparedStatement(c);
-            ps.executeUpdate();
-
-        } catch (SQLException e){
-            throw e;
-
-        } finally {
-            if(ps != null){
-                try {
-                    ps.close();
-                } catch (SQLException e){
-                    throw e;
-                }
-            }
-            if(c != null){
-                try {
-                    c.close();
-                } catch (SQLException e){
-                    throw e;
-                }
-            }
-        }
+    public List<User> getAll() {
+        return this.jdbcTemplate.query("SELECT * FROM users ORDER BY id", this.userMapper);
     }
+
 }
