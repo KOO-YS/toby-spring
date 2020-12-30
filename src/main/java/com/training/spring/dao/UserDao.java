@@ -1,22 +1,33 @@
 package com.training.spring.dao;
 
 import com.training.spring.domain.User;
-import com.training.spring.strategy.AddStatement;
-import com.training.spring.strategy.DeleteAllStatement;
 import com.training.spring.strategy.StatementStrategy;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
+import javax.sql.DataSource;
 import java.sql.*;
 
 // 클래스 분리로 인한 상속 제거
 public class UserDao {
 
+    private JdbcTemplate jdbcTemplate;
+
     // JdbcContext를 DI 받도록 만든다
     private JdbcContext jdbcContext;
+
+    private ConnectionMaker connectionMaker;
+
+    private DataSource dataSource;
+
+    public void setDataSource(DataSource dataSource){
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.dataSource = dataSource;
+    }
+
     public void setJdbcContext(JdbcContext jdbcContext){
         this.jdbcContext = jdbcContext;
     }
-    private ConnectionMaker connectionMaker;
 
     public void setConnectionMaker(ConnectionMaker connectionMaker) {
         this.connectionMaker = connectionMaker;

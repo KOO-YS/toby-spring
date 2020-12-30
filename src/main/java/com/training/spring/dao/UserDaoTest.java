@@ -7,14 +7,12 @@ import org.junit.runner.JUnitCore;
 import org.junit.runner.RunWith;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.sql.SQLException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-//@RunWith(SpringJUnit4ClassRunner.class)
 public class UserDaoTest {
     public static void main(String[] args) {
         JUnitCore.main("com.training.spring.dao.UserDaoTest");
