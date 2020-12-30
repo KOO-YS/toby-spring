@@ -2,6 +2,7 @@ package com.training.spring.dao;
 
 import com.training.spring.strategy.StatementStrategy;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -9,9 +10,14 @@ import java.sql.SQLException;
 public class JdbcContext {
 
     private ConnectionMaker connectionMaker;
+    private DataSource dataSource;
 
     public void setConnectionMaker(ConnectionMaker connectionMaker) {
         this.connectionMaker = connectionMaker;
+    }
+
+    public void setDataSource(DataSource dataSource){
+        this.dataSource = dataSource;
     }
 
     public void workWithStatementStrategy(StatementStrategy stmt) throws SQLException, ClassNotFoundException {
@@ -19,7 +25,8 @@ public class JdbcContext {
         Connection c = null;
         PreparedStatement ps = null;
         try {
-            c = connectionMaker.makeNewConnection();
+            c = dataSource.getConnection();
+//            c = connectionMaker.makeNewConnection();
             ps = stmt.makePreparedStatement(c);
             ps.executeUpdate();
 

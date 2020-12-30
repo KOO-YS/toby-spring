@@ -7,14 +7,13 @@ import org.junit.runner.JUnitCore;
 import org.junit.runner.RunWith;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.sql.SQLException;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-//@RunWith(SpringJUnit4ClassRunner.class)
 public class UserDaoTest {
     public static void main(String[] args) {
         JUnitCore.main("com.training.spring.dao.UserDaoTest");
@@ -69,5 +68,35 @@ public class UserDaoTest {
 
         dao.get("unknown");
 
+    }
+
+    @Test
+    public void getAll() throws SQLException, ClassNotFoundException {
+        dao.deleteAll();
+
+        List<User> check = dao.getAll();
+        assertThat(check.size(), is(0));
+        
+        for(int i=1; i<=3; i++){
+            // User 생성
+            User now = new User("userId"+i, "userName"+i, "1234");
+            dao.add(now);
+
+            // DB User 리스트 받아오기
+            List<User> users = dao.getAll();
+            // 리스트 크기 비교
+            assertThat(users.size(), is(i));
+
+            // 동등성 비교
+            checkSameUser(users.get(i-1), now);
+        }
+
+    }
+
+    // @Test를 붙이지 않는다 -> getAll()에서 반복되기 때문
+    private void checkSameUser(User user, User now) {
+        assertThat(user.getId(), is(now.getId()));
+        assertThat(user.getName(), is(now.getName()));
+        assertThat(user.getPassword(), is(now.getPassword()));
     }
 }
