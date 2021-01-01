@@ -1,13 +1,19 @@
 package com.training.spring.dao;
 
 import com.training.spring.domain.User;
+import com.training.spring.exception.DuplicateUserIdException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.JUnitCore;
-import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
+import org.springframework.jdbc.support.SQLExceptionTranslator;
 
+import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -21,11 +27,14 @@ public class UserDaoTest {
 
     // 픽스처 : 테스트를 수행하는 데 필요한 오브젝트
     private UserDao dao;    // 테스트 메소드에서 접근할 수 있도록 인스턴스 변수로 변경
-
+    @Autowired
+    private DataSource dataSource;
     @Before     // @Test 메소드가 실행되기 전 먼저 실행해야하는 메소드 정의
     public void setUp(){
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(DaoFactory.class);
-        this.dao = context.getBean("userDao", UserDao.class);
+        // ** 구현 기술이 달라진다면 구현 클래스를 여기서 변경해줌!
+        this.dao = context.getBean("userDaoJdbc", UserDaoJdbc.class);
+        this.dataSource = context.getBean("dataSource", DataSource.class);
     }
 
     @Test       // JUnit 테스트용 메소드는 반드시 public 선언 & 반환 void
@@ -99,4 +108,37 @@ public class UserDaoTest {
         assertThat(user.getName(), is(now.getName()));
         assertThat(user.getPassword(), is(now.getPassword()));
     }
+
+//    @Test(expected = DataAccessException.class)
+    @Test(expected = DuplicateUserIdException.class)
+    public void duplicateKey(){
+        dao.deleteAll();
+
+        User user = new User();
+        user.setId("JUnitId");
+        user.setName("testName");
+        user.setPassword("1234");
+
+        dao.add(user);
+        dao.add(user);      // 중복 예외 발생
+    }
+
+    @Test
+    public void sqlEceptionTranslate(){
+        dao.deleteAll();
+        User user = new User();
+        user.setId("JUnitId");
+        user.setName("testName");
+        user.setPassword("1234");
+
+        try {
+            dao.add(user);
+            dao.add(user);      // 중복 예외 발생
+        } catch (DataAccessException e){
+            SQLException sqlEx = (SQLException) e.getRootCause();
+            SQLExceptionTranslator set = new SQLErrorCodeSQLExceptionTranslator(this.dataSource);
+//            assertThat(set.translate(null, null, sqlEx), is(DuplicateKeyException.class));
+        }
+    }
+
 }

@@ -3,7 +3,6 @@ package com.training.spring.dao;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.datasource.SimpleDriverDataSource;
 
 import javax.sql.DataSource;
 
@@ -35,7 +34,7 @@ public class DaoFactory {
     }
 
     @Bean               // -> 오브젝트 생성 메소드를 위함
-    public UserDao userDao(){
+    public UserDaoJdbc userDaoJdbc(){
 
         // delete & add 를 위한 
         JdbcContext jdbcContext = new JdbcContext();
@@ -43,7 +42,7 @@ public class DaoFactory {
         jdbcContext.setDataSource(dataSource());        // DataSource 추가
         
         // 기존 메소드들을 위해 남겨둠
-        UserDao userDao = new UserDao();
+        UserDaoJdbc userDao = new UserDaoJdbc();
         userDao.setConnectionMaker(connectionMaker());
         userDao.setJdbcContext(jdbcContext);        // userDao에 jdbcContext 연결
         userDao.setDataSource(dataSource());        // DataSource 추가

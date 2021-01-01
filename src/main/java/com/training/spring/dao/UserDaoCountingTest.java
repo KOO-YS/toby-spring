@@ -10,7 +10,7 @@ public class UserDaoCountingTest {
 
         // @Configuration이 붙은 자바 코드를 설정정보로 사용하기 위한 생성자
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(CountingDaoFactory.class);
-        UserDao dao = context.getBean("userDao", UserDao.class);
+        UserDaoJdbc dao = context.getBean("userDao", UserDaoJdbc.class);
 
         User user = new User();
         user.setId("1234");

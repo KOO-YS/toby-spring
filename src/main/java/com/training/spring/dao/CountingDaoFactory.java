@@ -12,9 +12,9 @@ public class CountingDaoFactory {
      * 커넥션을 요청할 오브젝트
      */
     @Bean
-    public UserDao userDao(){
+    public UserDaoJdbc userDao(){
 //        return new UserDao(connectionMaker());
-        UserDao userDao = new UserDao();
+        UserDaoJdbc userDao = new UserDaoJdbc();
         userDao.setConnectionMaker(connectionMaker());
         return userDao;
     }

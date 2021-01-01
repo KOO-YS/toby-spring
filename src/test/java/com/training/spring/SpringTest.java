@@ -1,19 +1,18 @@
 package com.training.spring;
 
-import com.training.spring.dao.UserDao;
+import com.training.spring.dao.UserDaoJdbc;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 //@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = UserDao.class)
+@ContextConfiguration(classes = UserDaoJdbc.class)
 public class SpringTest {
 
 
