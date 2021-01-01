@@ -5,6 +5,7 @@ import com.training.spring.domain.User;
 import com.training.spring.exception.DuplicateUserIdException;
 import com.training.spring.strategy.StatementStrategy;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -49,31 +50,12 @@ public class UserDao {
         this.connectionMaker = connectionMaker;
     }
 
-    public void add(User user) throws DuplicateUserIdException, ClassNotFoundException {
-        // SQLException 예외 처리 실습을 위해 잠시 SQLException를 던지는 메소드로 변경
-//        this.jdbcTemplate.update("INSERT INTO users(id, name, password) VALUES(?,?,?)", user.getId(), user.getName(), user.getPassword());
-
+    public void add(User user) throws DuplicateUserIdException{     // 애플리케이션 레벨의 체크 예외
+        // JdbcTemplate 이용
         try {
-            this.jdbcContext.workWithStatementStrategy(
-                    new StatementStrategy() {
-                        @Override
-                        public PreparedStatement makePreparedStatement(Connection c) throws SQLException {
-                            PreparedStatement ps = c.prepareStatement("INSERT INTO users(id, name, password) VALUES(?,?,?)");
-
-                            ps.setString(1, user.getId());          // user 정보를 따로 선언하지 않아도 된다
-                            ps.setString(2, user.getName());
-                            ps.setString(3, user.getPassword());
-                            return ps;
-                        }
-                    }
-            );
-        } catch (SQLException e){
-            // 아이디 중복 예외 : 캐치해서 처리할 수 있는 문제이므로 (from 체크 예외에서 -> )런타임 에러로 만들어서 사용
-            if(e.getErrorCode() == MysqlErrorNumbers.ER_DUP_ENTRY)
-                throw new DuplicateUserIdException(e);      // 예외 전환
-            else
-                throw new RuntimeException();
-
+            this.jdbcTemplate.update("INSERT INTO users(id, name, password) VALUES(?,?,?)", user.getId(), user.getName(), user.getPassword());
+        } catch (DuplicateKeyException e){  // DataAccessException의 서브 클래스 DuplicateKeyExceptio으로 매핑되어 던져진다
+            throw new DuplicateUserIdException(e);  // 중첩 예외
         }
     }
 
