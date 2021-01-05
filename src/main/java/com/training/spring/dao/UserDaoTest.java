@@ -1,5 +1,6 @@
 package com.training.spring.dao;
 
+import com.training.spring.domain.Level;
 import com.training.spring.domain.User;
 import com.training.spring.exception.DuplicateUserIdException;
 import org.junit.Before;
@@ -15,6 +16,7 @@ import org.springframework.jdbc.support.SQLExceptionTranslator;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -29,12 +31,27 @@ public class UserDaoTest {
     private UserDao dao;    // 테스트 메소드에서 접근할 수 있도록 인스턴스 변수로 변경
     @Autowired
     private DataSource dataSource;
+
+    User user1;
+    User user2;
+    User user3;
+    List<User> userList;
+
     @Before     // @Test 메소드가 실행되기 전 먼저 실행해야하는 메소드 정의
     public void setUp(){
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(DaoFactory.class);
         // ** 구현 기술이 달라진다면 구현 클래스를 여기서 변경해줌!
         this.dao = context.getBean("userDaoJdbc", UserDaoJdbc.class);
         this.dataSource = context.getBean("dataSource", DataSource.class);
+
+        this.user1 = new User("Kim", "김씨", "qwerty", Level.BASIC, 1, 0);
+        this.user2 = new User("Lee", "이씨", "123456", Level.SILVER, 55, 10);
+        this.user3 = new User("Park", "박씨", "369369", Level.GOLD, 100, 40);
+
+        this.userList = new ArrayList<>();
+        userList.add(user1);
+        userList.add(user2);
+        userList.add(user3);
     }
 
     @Test       // JUnit 테스트용 메소드는 반드시 public 선언 & 반환 void
@@ -42,19 +59,15 @@ public class UserDaoTest {
         dao.deleteAll();
         assertThat(dao.getCount(), is(0));      // 데이터가 모두 삭제되었는지 레코드 수 확인
 
-        User user = new User();
-        user.setId("JUnitId");
-        user.setName("testName");
-        user.setPassword("1234");
 
-        dao.add(user);
+        dao.add(user1);
         assertThat(dao.getCount(), is(1));      // User 데이터를 추가함에 따라 레코드 수가 변했는지 확인
 
-        User user2 = dao.get(user.getId());
+        User same = dao.get(user1.getId());
 
         // 값이 일치하는지 테스트
-        assertThat(user2.getName(), is(user.getName()));        // is() : Matcher의 일종 equals()로 비교해주는 기능
-        assertThat(user2.getPassword(), is(user.getPassword()));
+        assertThat(same.getName(), is(user1.getName()));        // is() : Matcher의 일종 equals()로 비교해주는 기능
+        assertThat(same.getPassword(), is(user1.getPassword()));
 
     }
     @Test
@@ -63,9 +76,9 @@ public class UserDaoTest {
         assertThat(dao.getCount(), is(0));
 
         // Count가 제대로 동작하는지 테스트
-        for(int i=1; i<=3; i++){
-            dao.add(new User("userId"+i, "userName"+i, "1234"));
-            assertThat(dao.getCount(), is(i));
+        for(int i=0; i<3; i++){
+            dao.add(userList.get(i));
+            assertThat(dao.getCount(), is(i+1));
         }
     }
 
@@ -86,18 +99,19 @@ public class UserDaoTest {
         List<User> check = dao.getAll();
         assertThat(check.size(), is(0));
         
-        for(int i=1; i<=3; i++){
+        for(int i=0; i<3; i++){
             // User 생성
-            User now = new User("userId"+i, "userName"+i, "1234");
+            User now = userList.get(i);
             dao.add(now);
-
+            System.out.println(now.toString());
             // DB User 리스트 받아오기
             List<User> users = dao.getAll();
             // 리스트 크기 비교
-            assertThat(users.size(), is(i));
-
+            assertThat(users.size(), is(i+1));
+            System.out.println(users.get(i).toString());
             // 동등성 비교
-            checkSameUser(users.get(i-1), now);
+            checkSameUser(users.get(i), now);
+            System.out.println();
         }
 
     }
@@ -107,6 +121,9 @@ public class UserDaoTest {
         assertThat(user.getId(), is(now.getId()));
         assertThat(user.getName(), is(now.getName()));
         assertThat(user.getPassword(), is(now.getPassword()));
+        assertThat(user.getLevel(), is(now.getLevel()));
+        assertThat(user.getLogin(), is(now.getLogin()));
+        assertThat(user.getRecommend(), is(now.getRecommend()));
     }
 
 //    @Test(expected = DataAccessException.class)
@@ -114,26 +131,17 @@ public class UserDaoTest {
     public void duplicateKey(){
         dao.deleteAll();
 
-        User user = new User();
-        user.setId("JUnitId");
-        user.setName("testName");
-        user.setPassword("1234");
-
-        dao.add(user);
-        dao.add(user);      // 중복 예외 발생
+        dao.add(user1);
+        dao.add(user1);      // 중복 예외 발생
     }
 
     @Test
-    public void sqlEceptionTranslate(){
+    public void sqlExceptionTranslate(){
         dao.deleteAll();
-        User user = new User();
-        user.setId("JUnitId");
-        user.setName("testName");
-        user.setPassword("1234");
 
         try {
-            dao.add(user);
-            dao.add(user);      // 중복 예외 발생
+            dao.add(user1);
+            dao.add(user1);      // 중복 예외 발생
         } catch (DataAccessException e){
             SQLException sqlEx = (SQLException) e.getRootCause();
             SQLExceptionTranslator set = new SQLErrorCodeSQLExceptionTranslator(this.dataSource);
