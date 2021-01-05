@@ -1,5 +1,9 @@
-package com.training.spring.dao;
+package com.training.spring.factory;
 
+import com.training.spring.dao.ConnectionMaker;
+import com.training.spring.dao.CountingConnectionMaker;
+import com.training.spring.dao.DConnectionMaker;
+import com.training.spring.dao.UserDaoJdbc;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

@@ -1,10 +1,12 @@
 package com.training.spring.dao;
 
 import com.training.spring.domain.User;
+import com.training.spring.factory.CountingDaoFactory;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.sql.SQLException;
-
+@SpringBootTest
 public class UserDaoCountingTest {
     public static void main(String[] args) throws SQLException, ClassNotFoundException {
 

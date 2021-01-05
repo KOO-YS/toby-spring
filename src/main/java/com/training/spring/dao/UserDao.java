@@ -5,9 +5,10 @@ import com.training.spring.domain.User;
 import java.util.List;
 
 public interface UserDao {
-    void add(User user);
-    void deleteAll();
-    User get(String id);
-    int getCount();
-    List<User> getAll();
+    public void add(User user);
+    public void deleteAll();
+    public User get(String id);
+    public int getCount();
+    public List<User> getAll();
+    public int update(User user);
 }
