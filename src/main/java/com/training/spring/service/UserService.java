@@ -9,6 +9,9 @@ import java.util.List;
 public class UserService {
     UserDao userDao;
 
+    public static final int MIN_LOGCOUNT_FOR_SILVER = 50;
+    public static final int MIN_RECOMMEND_FOR_GOLD = 30;
+
     public void setUserDao(UserDao userDao){
         this.userDao = userDao;
     }
@@ -16,38 +19,23 @@ public class UserService {
     public void upgradeLevels(){
         List<User> users = userDao.getAll();
         for(User user : users){
-            Boolean changed = null;     // level 변경 플래그
-
-            // BASIC 레벨 업그레이드
-            if(user.getLevel() == Level.BASIC && user.getLogin() >= 50){
-                user.setLevel(Level.SILVER);
-                changed = true;
-            }
-            // SILVER 레벨 업그레이드
-            else if(user.getLevel() == Level.SILVER && user.getRecommend() >= 30){
-                user.setLevel(Level.GOLD);
-                changed = true;
-            }
-            else if(user.getLevel() == Level.GOLD){
-                changed = false;
-            }
-            else {
-                changed = false;
-            }
-            if(changed){
-                userDao.update(user);
-            }
-
+            if(canUpgradeLevel(user))       // 한 명씩 업그레이드 가능한지 확인
+                upgradeLevel(user);         // 한 명 업그레이드
         }
+    }
+
+    private void upgradeLevel(User user) {
+        user.upgradeLevel();
+        userDao.update(user);
     }
 
     public boolean canUpgradeLevel(User user){
         Level currentLevel = user.getLevel();
         switch (currentLevel){
             case BASIC:
-                return (user.getLogin() >= 50);
+                return (user.getLogin() >= MIN_LOGCOUNT_FOR_SILVER);
             case SILVER:
-                return (user.getRecommend() >= 30);
+                return (user.getRecommend() >= MIN_RECOMMEND_FOR_GOLD);
             case GOLD:
                 return false;
             default:
