@@ -3,13 +3,13 @@ package com.training.spring.dao;
 import com.training.spring.domain.Level;
 import com.training.spring.domain.User;
 import com.training.spring.exception.DuplicateUserIdException;
+import com.training.spring.factory.DaoFactory;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.JUnitCore;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 import org.springframework.jdbc.support.SQLExceptionTranslator;
@@ -21,11 +21,11 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-
+@SpringBootTest
 public class UserDaoTest {
-    public static void main(String[] args) {
-        JUnitCore.main("com.training.spring.dao.UserDaoTest");
-    }
+//    public static void main(String[] args) {
+//        JUnitCore.main("com.training.spring.dao.UserDaoTest");
+//    }
 
     // 픽스처 : 테스트를 수행하는 데 필요한 오브젝트
     private UserDao dao;    // 테스트 메소드에서 접근할 수 있도록 인스턴스 변수로 변경
@@ -147,6 +147,28 @@ public class UserDaoTest {
             SQLExceptionTranslator set = new SQLErrorCodeSQLExceptionTranslator(this.dataSource);
 //            assertThat(set.translate(null, null, sqlEx), is(DuplicateKeyException.class));
         }
+    }
+
+    @Test
+    public void update(){
+        dao.deleteAll();
+
+        dao.add(user1);     // 변경할 유저
+        dao.add(user2);     // 변경하지 않을 유저
+
+        user1.setName("EnglishName");
+        user1.setPassword("password");
+        user1.setLevel(Level.GOLD);
+        user1.setLogin(1000);
+        user1.setRecommend(999);
+
+        dao.update(user1);
+        User updateUser = dao.get(user1.getId());
+        checkSameUser(user1, updateUser);
+
+        User remainUser = dao.get(user2.getId());
+        checkSameUser(user2, remainUser);
+
     }
 
 }

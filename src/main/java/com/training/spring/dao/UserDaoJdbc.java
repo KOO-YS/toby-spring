@@ -54,6 +54,7 @@ public class UserDaoJdbc implements UserDao{
         this.connectionMaker = connectionMaker;
     }
 
+    @Override
     public void add(User user) throws DuplicateUserIdException{     // 애플리케이션 레벨의 체크 예외
         // JdbcTemplate 이용
         try {
@@ -63,17 +64,19 @@ public class UserDaoJdbc implements UserDao{
         }
     }
 
+    @Override
     public void deleteAll(){
         // Spring에서 지원해주는 Jdbc Template 사용
         this.jdbcTemplate.update("DELETE FROM users");
     }
 
-
+    @Override
     public User get(String id){
         // Spring에서 지원해주는 Jdbc Template 사용
         return this.jdbcTemplate.queryForObject("SELECT * FROM users WHERE id = ?", new Object[]{id}, this.userMapper);
     }
 
+    @Override
     public int getCount(){
         // Spring에서 지원해주는 Jdbc Template 사용 1
 //        return this.jdbcTemplate.query(new PreparedStatementCreator() {
@@ -92,8 +95,14 @@ public class UserDaoJdbc implements UserDao{
         return this.jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.TYPE);
     }
 
+    @Override
     public List<User> getAll() {
         return this.jdbcTemplate.query("SELECT * FROM users ORDER BY id", this.userMapper);
     }
 
+    @Override
+    public int update(User user) {
+        return this.jdbcTemplate.update("UPDATE users SET name=?, password=?, level=?, login=?, recommend=?" +
+                                        " where id=?", user.getName(), user.getPassword(), user.getLevel().intValue(), user.getLogin(), user.getRecommend(), user.getId());
+    }
 }

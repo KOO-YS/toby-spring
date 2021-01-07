@@ -1,5 +1,9 @@
-package com.training.spring.dao;
+package com.training.spring.factory;
 
+import com.training.spring.dao.ConnectionMaker;
+import com.training.spring.dao.DConnectionMaker;
+import com.training.spring.dao.UserDaoJdbc;
+import com.training.spring.service.UserService;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,16 +41,24 @@ public class DaoFactory {
     public UserDaoJdbc userDaoJdbc(){
 
         // delete & add 를 위한 
-        JdbcContext jdbcContext = new JdbcContext();
-        jdbcContext.setConnectionMaker(connectionMaker());
-        jdbcContext.setDataSource(dataSource());        // DataSource 추가
+//        JdbcContext jdbcContext = new JdbcContext();
+//        jdbcContext.setConnectionMaker(connectionMaker());
+//        jdbcContext.setDataSource(dataSource());        // DataSource 추가
         
         // 기존 메소드들을 위해 남겨둠
         UserDaoJdbc userDao = new UserDaoJdbc();
         userDao.setConnectionMaker(connectionMaker());
-        userDao.setJdbcContext(jdbcContext);        // userDao에 jdbcContext 연결
+//        userDao.setJdbcContext(jdbcContext);        // userDao에 jdbcContext 연결
         userDao.setDataSource(dataSource());        // DataSource 추가
         return userDao;
 //        return new UserDao(connectionMaker());      // 이 메소드 안에서 connection 정보를 바꿀 일이 없어졌다
+    }
+
+    @Bean
+    public UserService userService(){
+        UserService userService = new UserService();
+        userService.setUserDao(userDaoJdbc());
+
+        return userService;
     }
 }
