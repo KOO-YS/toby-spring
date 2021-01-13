@@ -4,14 +4,17 @@ import com.training.spring.dao.UserDao;
 import com.training.spring.dao.UserDaoJdbc;
 import com.training.spring.domain.Level;
 import com.training.spring.domain.User;
-import com.training.spring.factory.DaoFactory;
+import com.training.spring.factory.BeanFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -20,6 +23,7 @@ import static com.training.spring.service.UserService.MIN_RECOMMEND_FOR_GOLD;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 @SpringBootTest
 public class UserServiceTest {
@@ -27,14 +31,18 @@ public class UserServiceTest {
     UserService userService;
     @Autowired
     UserDao userDao;
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     List<User> userList;
 
     @Before
     public void setUpBean(){
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(DaoFactory.class);
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(BeanFactory.class);
         this.userService = context.getBean("userService", UserService.class);
         this.userDao = context.getBean("userDaoJdbc", UserDaoJdbc.class);
+//        this.dataSource = context.getBean("dataSource", DataSource.class);
+        this.transactionManager = context.getBean("transactionManager", DataSourceTransactionManager.class);
 
     }
 
@@ -51,7 +59,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void upgradeLevels(){
+    public void upgradeLevels() throws SQLException {
         userDao.deleteAll();
 
         for(User u : userList){
@@ -102,4 +110,27 @@ public class UserServiceTest {
         assertThat(userWithLevelRead.getLevel(), is(userWithLevel.getLevel()));
         assertThat(userWithoutLevelRead.getLevel(), is(Level.BASIC));
     }
+
+    @Test
+    public void upgradeAllOrNothing(){
+        UserService testUserService = new TestUserService(userList.get(3).getId());
+        testUserService.setUserDao(this.userDao);       // 수동 DI
+//        testUserService.setDataSource(this.dataSource);
+        testUserService.setTransactionManager(transactionManager);
+
+        userDao.deleteAll();
+        for(User user : userList){
+            userDao.add(user);
+        }
+
+        try {
+            testUserService.upgradeLevels();                // 이 메소드가 정상 종료 되면 안된다!
+            fail("TestUserServiceException expected ");
+        } catch (TestUserService.TestUserServiceException | SQLException e){
+
+        }
+
+        checkLevelUpgraded(userList.get(1), false);
+    }
+
 }
