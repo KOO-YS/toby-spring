@@ -18,10 +18,10 @@ import java.util.List;
 public class UserService {
     UserDao userDao;
 
-    private DataSource dataSource;      // Connection 생성 시 사용할 DataSource DI
-
-    public void setDataSource(DataSource dataSource){
-        this.dataSource = dataSource;
+    // DB 커넥션 생성과 트랜잭션 경계설정 기능을 모두 사용할 수 있다
+    private PlatformTransactionManager transactionManager;
+    public void setTransactionManager(PlatformTransactionManager transactionManager){
+        this.transactionManager = transactionManager;
     }
 
     public static final int MIN_LOGCOUNT_FOR_SILVER = 50;
@@ -32,12 +32,8 @@ public class UserService {
     }
 
     public void upgradeLevels() throws SQLException {
-        // JDBC 트랜잭션 추상 오브젝트 생성 (생성과 함께 트랜잭션 시작)
-        PlatformTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);       // JDBC 로컬 트랜잭션을 이용
-        // PlatformTransactionManager 로 시작한 트랜잭션 ::: 트랜잭션 동기화 저장소에 저장
-        
         // 트랜잭션에 대한 조작이 필요할 때 전달해줄 데이터
-        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        TransactionStatus status = this.transactionManager.getTransaction(new DefaultTransactionDefinition());
 
         try {
             List<User> users = userDao.getAll();
@@ -46,7 +42,7 @@ public class UserService {
                     upgradeLevel(user);         // 한 명 업그레이드
             }
 
-            transactionManager.commit(status);      // COMMIT
+            this.transactionManager.commit(status);      // COMMIT
 
         } catch (Exception e){
             transactionManager.rollback(status);    // ROLLBACK

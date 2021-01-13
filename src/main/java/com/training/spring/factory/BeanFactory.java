@@ -7,11 +7,12 @@ import com.training.spring.service.UserService;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 import javax.sql.DataSource;
 
 @Configuration          // -> 오브젝트 설정을 담당하는 클래스 인식
-public class DaoFactory {
+public class BeanFactory {
 
     @Bean
     public DataSource dataSource(){
@@ -58,8 +59,12 @@ public class DaoFactory {
     public UserService userService(){
         UserService userService = new UserService();
         userService.setUserDao(userDaoJdbc());
-        userService.setDataSource(dataSource());
-
+        userService.setTransactionManager(transactionManager());
         return userService;
+    }
+
+    @Bean
+    public DataSourceTransactionManager transactionManager(){
+        return new DataSourceTransactionManager(dataSource());
     }
 }

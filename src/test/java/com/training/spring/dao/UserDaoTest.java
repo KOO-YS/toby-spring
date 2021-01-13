@@ -3,7 +3,7 @@ package com.training.spring.dao;
 import com.training.spring.domain.Level;
 import com.training.spring.domain.User;
 import com.training.spring.exception.DuplicateUserIdException;
-import com.training.spring.factory.DaoFactory;
+import com.training.spring.factory.BeanFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +39,7 @@ public class UserDaoTest {
 
     @Before     // @Test 메소드가 실행되기 전 먼저 실행해야하는 메소드 정의
     public void setUp(){
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(DaoFactory.class);
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(BeanFactory.class);
         // ** 구현 기술이 달라진다면 구현 클래스를 여기서 변경해줌!
         this.dao = context.getBean("userDaoJdbc", UserDaoJdbc.class);
         this.dataSource = context.getBean("dataSource", DataSource.class);

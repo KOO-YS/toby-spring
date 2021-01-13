@@ -4,12 +4,14 @@ import com.training.spring.dao.UserDao;
 import com.training.spring.dao.UserDaoJdbc;
 import com.training.spring.domain.Level;
 import com.training.spring.domain.User;
-import com.training.spring.factory.DaoFactory;
+import com.training.spring.factory.BeanFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
@@ -30,16 +32,17 @@ public class UserServiceTest {
     @Autowired
     UserDao userDao;
     @Autowired
-    private DataSource dataSource;
+    private PlatformTransactionManager transactionManager;
 
     List<User> userList;
 
     @Before
     public void setUpBean(){
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(DaoFactory.class);
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(BeanFactory.class);
         this.userService = context.getBean("userService", UserService.class);
         this.userDao = context.getBean("userDaoJdbc", UserDaoJdbc.class);
-        this.dataSource = context.getBean("dataSource", DataSource.class);
+//        this.dataSource = context.getBean("dataSource", DataSource.class);
+        this.transactionManager = context.getBean("transactionManager", DataSourceTransactionManager.class);
 
     }
 
@@ -112,7 +115,8 @@ public class UserServiceTest {
     public void upgradeAllOrNothing(){
         UserService testUserService = new TestUserService(userList.get(3).getId());
         testUserService.setUserDao(this.userDao);       // 수동 DI
-        testUserService.setDataSource(this.dataSource);
+//        testUserService.setDataSource(this.dataSource);
+        testUserService.setTransactionManager(transactionManager);
 
         userDao.deleteAll();
         for(User user : userList){
