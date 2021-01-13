@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import javax.sql.DataSource;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -28,6 +29,8 @@ public class UserServiceTest {
     UserService userService;
     @Autowired
     UserDao userDao;
+    @Autowired
+    private DataSource dataSource;
 
     List<User> userList;
 
@@ -36,6 +39,7 @@ public class UserServiceTest {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(DaoFactory.class);
         this.userService = context.getBean("userService", UserService.class);
         this.userDao = context.getBean("userDaoJdbc", UserDaoJdbc.class);
+        this.dataSource = context.getBean("dataSource", DataSource.class);
 
     }
 
@@ -52,7 +56,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void upgradeLevels(){
+    public void upgradeLevels() throws SQLException {
         userDao.deleteAll();
 
         for(User u : userList){
@@ -105,9 +109,10 @@ public class UserServiceTest {
     }
 
     @Test
-    public void upgrageAllOrNothing(){
+    public void upgradeAllOrNothing(){
         UserService testUserService = new TestUserService(userList.get(3).getId());
         testUserService.setUserDao(this.userDao);       // 수동 DI
+        testUserService.setDataSource(this.dataSource);
 
         userDao.deleteAll();
         for(User user : userList){
@@ -117,7 +122,7 @@ public class UserServiceTest {
         try {
             testUserService.upgradeLevels();                // 이 메소드가 정상 종료 되면 안된다!
             fail("TestUserServiceException expected ");
-        } catch (TestUserService.TestUserServiceException e){
+        } catch (TestUserService.TestUserServiceException | SQLException e){
 
         }
 
