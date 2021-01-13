@@ -3,7 +3,11 @@ package com.training.spring.service;
 import com.training.spring.dao.UserDao;
 import com.training.spring.domain.Level;
 import com.training.spring.domain.User;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
@@ -28,13 +32,12 @@ public class UserService {
     }
 
     public void upgradeLevels() throws SQLException {
-        // 트랜잭션 동기화 기능을 지원하는 스프링의 유틸리티 메소드
-        TransactionSynchronizationManager.initSynchronization();        // 트랜잭션 동기화 관리자를 이용해 동기화 작업을 초기화
-
-        Connection c = DataSourceUtils.getConnection(dataSource);       // DB 커넥션 생성과 동기화를 함께 해주는 유틸리티 메소드
-        c.setAutoCommit(false);         // DB 커넥션을 생성하고 트랜잭션을 시작
+        // JDBC 트랜잭션 추상 오브젝트 생성 (생성과 함께 트랜잭션 시작)
+        PlatformTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);       // JDBC 로컬 트랜잭션을 이용
+        // PlatformTransactionManager 로 시작한 트랜잭션 ::: 트랜잭션 동기화 저장소에 저장
         
-        // 이후 DAO 작업은 모두 여기서부터 시작한 트랜잭션 안에서 진행된다
+        // 트랜잭션에 대한 조작이 필요할 때 전달해줄 데이터
+        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
 
         try {
             List<User> users = userDao.getAll();
@@ -42,15 +45,12 @@ public class UserService {
                 if (canUpgradeLevel(user))       // 한 명씩 업그레이드 가능한지 확인
                     upgradeLevel(user);         // 한 명 업그레이드
             }
-            c.commit();         // 정상 종료
+
+            transactionManager.commit(status);      // COMMIT
+
         } catch (Exception e){
-            c.rollback();       // 예외 발생 -> 데이터 되돌리기
+            transactionManager.rollback(status);    // ROLLBACK
             throw e;
-        } finally {
-            DataSourceUtils.releaseConnection(c, dataSource);   // DB 커넥션을 안전하게 닫는다
-            // 동기화 작업 종료 및 정리
-            TransactionSynchronizationManager.unbindResource(this.dataSource);
-            TransactionSynchronizationManager.clearSynchronization();
         }
     }
 
