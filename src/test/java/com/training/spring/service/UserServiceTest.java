@@ -5,12 +5,16 @@ import com.training.spring.dao.UserDaoJdbc;
 import com.training.spring.domain.Level;
 import com.training.spring.domain.User;
 import com.training.spring.factory.BeanFactory;
+import com.training.spring.util.DummyMailSender;
+import com.training.spring.util.MockMailSender;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.mail.MailSender;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
@@ -33,6 +37,8 @@ public class UserServiceTest {
     UserDao userDao;
     @Autowired
     private PlatformTransactionManager transactionManager;
+    @Autowired
+    MailSender mailSender;
 
     List<User> userList;
 
@@ -43,28 +49,30 @@ public class UserServiceTest {
         this.userDao = context.getBean("userDaoJdbc", UserDaoJdbc.class);
 //        this.dataSource = context.getBean("dataSource", DataSource.class);
         this.transactionManager = context.getBean("transactionManager", DataSourceTransactionManager.class);
-
+        this.mailSender = context.getBean("dummyMailSender", DummyMailSender.class);
     }
 
     @Before
     public void setFixture(){
         userList = Arrays.asList(
                                                                             // 상수를 사용해 어떤 의도로 값을 넣었는지 이해가 쉬워짐
-          new User("Apple", "사과", "p1", Level.BASIC, MIN_LOGCOUNT_FOR_SILVER-1, 0),
-          new User("Banana","바나나", "p2", Level.BASIC, MIN_LOGCOUNT_FOR_SILVER, 0),
-          new User("Cherry","체리", "p3", Level.SILVER, 60, MIN_RECOMMEND_FOR_GOLD-1),
-          new User("Date","대추", "p4", Level.SILVER, 60, MIN_RECOMMEND_FOR_GOLD),
-          new User("Egg","계란", "p5",Level.GOLD, 100, Integer.MAX_VALUE)
+          new User("Apple", "사과", "p1", Level.BASIC, MIN_LOGCOUNT_FOR_SILVER-1, 0, "yaans@yaans.com"),
+          new User("Banana","바나나", "p2", Level.BASIC, MIN_LOGCOUNT_FOR_SILVER, 0, "yaans@yaans.com"),
+          new User("Cherry","체리", "p3", Level.SILVER, 60, MIN_RECOMMEND_FOR_GOLD-1,"yaans@yaans.com"),
+          new User("Date","대추", "p4", Level.SILVER, 60, MIN_RECOMMEND_FOR_GOLD,"yaans@yaans.com"),
+          new User("Egg","계란", "p5",Level.GOLD, 100, Integer.MAX_VALUE,"yaans@yaans.com")
         );
     }
 
     @Test
+    @DirtiesContext     // 컨텍스트의 DI 설정을 변경하는 테스트
     public void upgradeLevels() throws SQLException {
         userDao.deleteAll();
 
-        for(User u : userList){
-            userDao.add(u);
-        }
+        for(User u : userList) userDao.add(u);
+
+        MockMailSender mockMailSender = new MockMailSender();
+        userService.setMailSender(mockMailSender);
 
         userService.upgradeLevels();
 
@@ -73,6 +81,11 @@ public class UserServiceTest {
         checkLevelUpgraded(userList.get(2), false);
         checkLevelUpgraded(userList.get(3), true);
         checkLevelUpgraded(userList.get(4), false);
+
+        List<String> request = mockMailSender.getRequests();
+        assertThat(request.size(), is(2));
+        assertThat(request.get(0), is(userList.get(1).getEmail()));
+        assertThat(request.get(1), is(userList.get(3).getEmail()));
 
     }
 
@@ -117,6 +130,7 @@ public class UserServiceTest {
         testUserService.setUserDao(this.userDao);       // 수동 DI
 //        testUserService.setDataSource(this.dataSource);
         testUserService.setTransactionManager(transactionManager);
+        testUserService.setMailSender(mailSender);
 
         userDao.deleteAll();
         for(User user : userList){

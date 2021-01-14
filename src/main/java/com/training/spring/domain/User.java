@@ -20,6 +20,8 @@ public class User {
     int login;      // 로그인 횟수
     int recommend;  // 추천 수
 
+    String email;
+
 //    Date lastUpgraded;
 
     public void upgradeLevel(){
