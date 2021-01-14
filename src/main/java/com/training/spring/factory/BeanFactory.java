@@ -4,10 +4,13 @@ import com.training.spring.dao.ConnectionMaker;
 import com.training.spring.dao.DConnectionMaker;
 import com.training.spring.dao.UserDaoJdbc;
 import com.training.spring.service.UserService;
+import com.training.spring.util.DummyMailSender;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.mail.MailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 import javax.sql.DataSource;
 
@@ -60,11 +63,23 @@ public class BeanFactory {
         UserService userService = new UserService();
         userService.setUserDao(userDaoJdbc());
         userService.setTransactionManager(transactionManager());
+        userService.setMailSender(dummyMailSender());
         return userService;
     }
 
     @Bean
     public DataSourceTransactionManager transactionManager(){
         return new DataSourceTransactionManager(dataSource());
+    }
+
+    @Bean
+    public MailSender mailSender(){
+        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setHost("mail.server.com");
+        return mailSender;
+    }
+    @Bean
+    public MailSender dummyMailSender(){
+        return new DummyMailSender();
     }
 }

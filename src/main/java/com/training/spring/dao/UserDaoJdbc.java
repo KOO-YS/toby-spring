@@ -38,6 +38,7 @@ public class UserDaoJdbc implements UserDao{
             user.setLevel(Level.valueOf(rs.getInt("level")));
             user.setLogin(rs.getInt("login"));
             user.setRecommend(rs.getInt("recommend"));
+            user.setEmail("yaans@yaans.com");
             return user;
         }
     };
@@ -58,7 +59,7 @@ public class UserDaoJdbc implements UserDao{
     public void add(User user) throws DuplicateUserIdException{     // 애플리케이션 레벨의 체크 예외
         // JdbcTemplate 이용
         try {
-            this.jdbcTemplate.update("INSERT INTO users(id, name, password, level, login, recommend) VALUES(?,?,?,?,?,?)", user.getId(), user.getName(), user.getPassword(), user.getLevel().intValue(), user.getLogin(), user.getRecommend());
+            this.jdbcTemplate.update("INSERT INTO users(id, name, password, level, login, recommend, email) VALUES(?,?,?,?,?,?,?)", user.getId(), user.getName(), user.getPassword(), user.getLevel().intValue(), user.getLogin(), user.getRecommend(), user.getEmail());
         } catch (DuplicateKeyException e){  // DataAccessException의 서브 클래스 DuplicateKeyExceptio으로 매핑되어 던져진다
             throw new DuplicateUserIdException(e);  // 중첩 예외
         }
@@ -102,7 +103,7 @@ public class UserDaoJdbc implements UserDao{
 
     @Override
     public int update(User user) {
-        return this.jdbcTemplate.update("UPDATE users SET name=?, password=?, level=?, login=?, recommend=?" +
-                                        " where id=?", user.getName(), user.getPassword(), user.getLevel().intValue(), user.getLogin(), user.getRecommend(), user.getId());
+        return this.jdbcTemplate.update("UPDATE users SET name=?, password=?, level=?, login=?, recommend=?, email=?" +
+                                        " where id=?", user.getName(), user.getPassword(), user.getLevel().intValue(), user.getLogin(), user.getRecommend(), user.getEmail(), user.getId());
     }
 }

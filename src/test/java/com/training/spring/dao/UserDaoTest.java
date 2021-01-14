@@ -44,9 +44,9 @@ public class UserDaoTest {
         this.dao = context.getBean("userDaoJdbc", UserDaoJdbc.class);
         this.dataSource = context.getBean("dataSource", DataSource.class);
 
-        this.user1 = new User("Kim", "김씨", "qwerty", Level.BASIC, 1, 0);
-        this.user2 = new User("Lee", "이씨", "123456", Level.SILVER, 55, 10);
-        this.user3 = new User("Park", "박씨", "369369", Level.GOLD, 100, 40);
+        this.user1 = new User("Kim", "김씨", "qwerty", Level.BASIC, 1, 0, "yaans@yaans.com");
+        this.user2 = new User("Lee", "이씨", "123456", Level.SILVER, 55, 10, "yaans@yaans.com");
+        this.user3 = new User("Park", "박씨", "369369", Level.GOLD, 100, 40, "yaans@yaans.com");
 
         this.userList = new ArrayList<>();
         userList.add(user1);
