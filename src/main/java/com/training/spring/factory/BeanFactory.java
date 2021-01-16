@@ -3,7 +3,8 @@ package com.training.spring.factory;
 import com.training.spring.dao.ConnectionMaker;
 import com.training.spring.dao.DConnectionMaker;
 import com.training.spring.dao.UserDaoJdbc;
-import com.training.spring.service.UserService;
+import com.training.spring.service.UserServiceImpl;
+import com.training.spring.service.UserServiceTx;
 import com.training.spring.util.DummyMailSender;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -11,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.mail.MailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.transaction.TransactionManager;
 
 import javax.sql.DataSource;
 
@@ -59,12 +61,20 @@ public class BeanFactory {
     }
 
     @Bean
-    public UserService userService(){
-        UserService userService = new UserService();
+    public UserServiceImpl userServiceImpl(){
+        UserServiceImpl userService = new UserServiceImpl();
         userService.setUserDao(userDaoJdbc());
         userService.setTransactionManager(transactionManager());
         userService.setMailSender(dummyMailSender());
         return userService;
+    }
+
+    @Bean
+    public UserServiceTx userServiceTx(){
+        UserServiceTx userServiceTx = new UserServiceTx();
+        userServiceTx.setTransactionManager(transactionManager());
+        userServiceTx.setUserService(userServiceImpl());
+        return userServiceTx;
     }
 
     @Bean

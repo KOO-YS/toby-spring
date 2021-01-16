@@ -17,13 +17,12 @@ import org.springframework.mail.MailSender;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.training.spring.service.UserService.MIN_LOGCOUNT_FOR_SILVER;
-import static com.training.spring.service.UserService.MIN_RECOMMEND_FOR_GOLD;
+import static com.training.spring.service.UserServiceImpl.MIN_LOGCOUNT_FOR_SILVER;
+import static com.training.spring.service.UserServiceImpl.MIN_RECOMMEND_FOR_GOLD;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -32,9 +31,13 @@ import static org.junit.Assert.fail;
 @SpringBootTest
 public class UserServiceTest {
     @Autowired
-    UserService userService;
+    UserService userServiceTx;      // 타입이 일치하는 빈이 2개 이상일 때, 필드명을 우선적인 기준으로 빈을 찾는다
     @Autowired
     UserDao userDao;
+
+    @Autowired
+    UserServiceImpl userServiceImpl;
+
     @Autowired
     private PlatformTransactionManager transactionManager;
     @Autowired
@@ -45,7 +48,8 @@ public class UserServiceTest {
     @Before
     public void setUpBean(){
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(BeanFactory.class);
-        this.userService = context.getBean("userService", UserService.class);
+        this.userServiceTx = context.getBean("userServiceTx", UserServiceTx.class);
+        this.userServiceImpl = context.getBean("userServiceImpl", UserServiceImpl.class);
         this.userDao = context.getBean("userDaoJdbc", UserDaoJdbc.class);
 //        this.dataSource = context.getBean("dataSource", DataSource.class);
         this.transactionManager = context.getBean("transactionManager", DataSourceTransactionManager.class);
@@ -72,9 +76,9 @@ public class UserServiceTest {
         for(User u : userList) userDao.add(u);
 
         MockMailSender mockMailSender = new MockMailSender();
-        userService.setMailSender(mockMailSender);
+        userServiceImpl.setMailSender(mockMailSender);
 
-        userService.upgradeLevels();
+        userServiceImpl.upgradeLevels();
 
         checkLevelUpgraded(userList.get(0), false);
         checkLevelUpgraded(userList.get(1), true);
@@ -114,8 +118,8 @@ public class UserServiceTest {
         User userWithoutLevel = userList.get(0);
         userWithoutLevel.setLevel(null);    // 레벨이 비어있는 사용자로 설정 -> BASIC으로 자동 설정 요구
 
-        userService.add(userWithLevel);
-        userService.add(userWithoutLevel);
+        userServiceTx.add(userWithLevel);
+        userServiceTx.add(userWithoutLevel);
 
         User userWithLevelRead = userDao.get(userWithLevel.getId());
         User userWithoutLevelRead = userDao.get(userWithoutLevel.getId());
@@ -126,11 +130,14 @@ public class UserServiceTest {
 
     @Test
     public void upgradeAllOrNothing(){
-        UserService testUserService = new TestUserService(userList.get(3).getId());
+        UserServiceImpl testUserService = new TestUserService(userList.get(3).getId());
         testUserService.setUserDao(this.userDao);       // 수동 DI
-//        testUserService.setDataSource(this.dataSource);
         testUserService.setTransactionManager(transactionManager);
         testUserService.setMailSender(mailSender);
+
+        UserServiceTx txUserService = new UserServiceTx();
+        txUserService.setTransactionManager(transactionManager);
+        txUserService.setUserService(testUserService);
 
         userDao.deleteAll();
         for(User user : userList){
@@ -138,9 +145,10 @@ public class UserServiceTest {
         }
 
         try {
-            testUserService.upgradeLevels();                // 이 메소드가 정상 종료 되면 안된다!
+            // 트랜잭션 기능을 분리한 오브젝트를 통해 예외 발생용 TestUserService가 호출되게 해야 한다
+            txUserService.upgradeLevels();                // 이 메소드가 정상 종료 되면 안된다!
             fail("TestUserServiceException expected ");
-        } catch (TestUserService.TestUserServiceException | SQLException e){
+        } catch (TestUserService.TestUserServiceException e){
 
         }
 

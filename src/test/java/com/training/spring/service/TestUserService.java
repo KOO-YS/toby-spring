@@ -4,7 +4,7 @@ import com.training.spring.domain.User;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-public class TestUserService extends UserService{
+public class TestUserService extends UserServiceImpl {
     private String id;
 
     TestUserService(String id){
