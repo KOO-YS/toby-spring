@@ -15,6 +15,7 @@ import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 // 클래스 분리로 인한 상속 제거
@@ -102,8 +103,8 @@ public class UserDaoJdbc implements UserDao{
     }
 
     @Override
-    public int update(User user) {
-        return this.jdbcTemplate.update("UPDATE users SET name=?, password=?, level=?, login=?, recommend=?, email=?" +
+    public void update(User user) {
+        this.jdbcTemplate.update("UPDATE users SET name=?, password=?, level=?, login=?, recommend=?, email=?" +
                                         " where id=?", user.getName(), user.getPassword(), user.getLevel().intValue(), user.getLogin(), user.getRecommend(), user.getEmail(), user.getId());
     }
 }
