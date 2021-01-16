@@ -9,15 +9,18 @@ import com.training.spring.util.DummyMailSender;
 import com.training.spring.util.MockMailSender;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.mail.MailSender;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,6 +30,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 public class UserServiceTest {
@@ -69,28 +73,66 @@ public class UserServiceTest {
     }
 
     @Test
-    @DirtiesContext     // 컨텍스트의 DI 설정을 변경하는 테스트
-    public void upgradeLevels() throws SQLException {
-        userDao.deleteAll();
+    public void mockUpgradeLevels(){
+        UserServiceImpl serviceImpl = new UserServiceImpl();
 
-        for(User u : userList) userDao.add(u);
+        // 다이나믹한 목 오브젝트 생성과 메소드의 리턴 값 설정, DI
+        UserDao mockUserDao = mock(UserDao.class);
+        // mockUserDao.getAll()이 호출됐을 때, userList를 리턴해주어라
+        when(mockUserDao.getAll()).thenReturn(this.userList);
+        serviceImpl.setUserDao(mockUserDao);
+
+        // 리턴값이 없는 메소드를 가진 목 오브젝트 생성
+        MailSender mockMailSender = mock(MailSender.class);
+        serviceImpl.setMailSender(mockMailSender);
+
+        serviceImpl.upgradeLevels();
+
+        // User 타입의 오브젝트를 파라미터로 받으며 update() 메소드가 2번 호출됐는지 확인
+        verify(mockUserDao, times(2)).update(any(User.class));
+        verify(mockUserDao, times(2)).update(any(User.class));
+        verify(mockUserDao).update(userList.get(1));
+        assertThat(userList.get(1).getLevel(), is(Level.SILVER));
+        verify(mockUserDao).update(userList.get(3));
+        assertThat(userList.get(3).getLevel(), is(Level.GOLD));
+        // -> 목 오브젝트가 제공하는 검증 기능을 통해서 어떤 메소드가 몇 번 호출됐는지, 파라미터는 무엇인지 확인할 수 있다
+
+        ArgumentCaptor<SimpleMailMessage> mailMessageArg = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        // 파라미터를 정밀하게 검사하기 위해 캡쳐 가능
+        verify(mockMailSender, times(2)).send(mailMessageArg.capture());
+        List<SimpleMailMessage> mailMessages = mailMessageArg.getAllValues();
+        assertThat(mailMessages.get(0).getTo()[0], is(userList.get(1).getEmail()));
+        assertThat(mailMessages.get(1).getTo()[0], is(userList.get(3).getEmail()));
+    }
+
+    @Test
+    public void upgradeLevels() throws SQLException {
+        // 고립된 테스트에서는 테스트 대상 오브젝트를 직접 생성
+        // 완전히 고립된 테스트만을 위해 독립적으로 동작하는 테스트 대상을 사용할 것이기 떄문에 스프링 컨테이너에서 빈을 가져올 필요가 없다
+        UserServiceImpl serviceImpl = new UserServiceImpl();
+
+        MockUserDao mockUserDao = new MockUserDao(this.userList);
+        serviceImpl.setUserDao(mockUserDao);
 
         MockMailSender mockMailSender = new MockMailSender();
-        userServiceImpl.setMailSender(mockMailSender);
+        serviceImpl.setMailSender(mockMailSender);
 
-        userServiceImpl.upgradeLevels();
+        serviceImpl.upgradeLevels();
 
-        checkLevelUpgraded(userList.get(0), false);
-        checkLevelUpgraded(userList.get(1), true);
-        checkLevelUpgraded(userList.get(2), false);
-        checkLevelUpgraded(userList.get(3), true);
-        checkLevelUpgraded(userList.get(4), false);
+        List<User> updated = mockUserDao.getUpdated();
+
+        assertThat(updated.size(), is(2));
+        checkUserAndLevel(updated.get(0), "Banana", Level.SILVER);
+        checkUserAndLevel(updated.get(1), "Date", Level.GOLD);
 
         List<String> request = mockMailSender.getRequests();
         assertThat(request.size(), is(2));
         assertThat(request.get(0), is(userList.get(1).getEmail()));
         assertThat(request.get(1), is(userList.get(3).getEmail()));
-
+    }
+    private void checkUserAndLevel(User updated, String expectedId, Level expectedLevel){
+        assertThat(updated.getId(), is(expectedId));
+        assertThat(updated.getLevel(), is(expectedLevel));
     }
 
     /**
@@ -155,4 +197,53 @@ public class UserServiceTest {
         checkLevelUpgraded(userList.get(1), false);
     }
 
+    static class MockUserDao implements UserDao{
+        private List<User> userList;
+        private List<User> updated = new ArrayList<>();
+
+        private MockUserDao(List<User> userList){
+            this.userList = userList;
+        }
+
+        public List<User> getUpdated() {
+            return updated;
+        }
+
+        // Stub 기능 제공
+        @Override
+        public List<User> getAll(){
+            return this.userList;
+        }
+
+        // 목 오브젝트 기능 제공
+        @Override
+        public void update(User user) {
+            updated.add(user);
+        }
+
+        /**
+         *  테스트로 사용되지 않는 메소드들
+         */
+
+        @Override
+        public void add(User user) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void deleteAll() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public User get(String id) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getCount() {
+            throw new UnsupportedOperationException();
+        }
+
+    }
 }
