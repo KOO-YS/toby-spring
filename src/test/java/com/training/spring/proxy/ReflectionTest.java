@@ -38,4 +38,21 @@ public class ReflectionTest {
                                         is('S'));
     }
 
+    @Test
+    public void simpleProxy(){
+        Hello hello = new HelloTarget();        // 타깃은 인터페이스를 통해 접근하는 것이 좋다
+        assertThat(hello.sayHello("Toby"), is("Hello Toby"));
+        assertThat(hello.sayHi("Toby"), is("Hi Toby"));
+        assertThat(hello.sayThankYou("Toby"), is("Thank You Toby"));
+
+        // proxy applied
+        Hello proxieHello = new HelloUppercase(new HelloTarget());      // 프록시를 통해 타깃 오브젝트에 접근한다
+        assertThat(proxieHello.sayHello("Toby"), is("HELLO TOBY"));
+        assertThat(proxieHello.sayHi("Toby"), is("HI TOBY"));
+        assertThat(proxieHello.sayThankYou("Toby"), is("THANK YOU TOBY"));
+        /* FIXME :  문제점을 가진 코드
+        *  문제점 1. 인터페이스의 모든 메소드를 구현해 위임하는 코드 만듦
+        *  문제점 2. 부가 기능(리턴 값을 태문자로 바꾸는 기능)이 모든 메소드에서 중복
+        */
+    }
 }
