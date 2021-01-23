@@ -5,6 +5,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -54,5 +55,23 @@ public class ReflectionTest {
         *  문제점 1. 인터페이스의 모든 메소드를 구현해 위임하는 코드 만듦
         *  문제점 2. 부가 기능(리턴 값을 태문자로 바꾸는 기능)이 모든 메소드에서 중복
         */
+    }
+
+    @Test
+    public void dynamicProxy(){
+        /**
+         * Object newProxyInstance(ClassLoader loader,
+         *                          Class<?>[] interfaces,
+         *                          InvocationHandler h)
+         */
+        Hello proxiedHello = (Hello) Proxy.newProxyInstance(
+                getClass().getClassLoader(),                // 동적으로 생성되는 다이나믹 프록시 클래스의 로딩에 사용할 클래스 로더
+                new Class[]{Hello.class},                   // 구현할 인터페이 스
+                new UppercaseHandler((new HelloTarget()))   // 부가 기능과 위임 코드를 담은 InvocationHandler
+        );
+
+        assertThat(proxiedHello.sayHello("Toby"), is("HELLO TOBY"));
+        assertThat(proxiedHello.sayHi("Toby"), is("HI TOBY"));
+        assertThat(proxiedHello.sayThankYou("Toby"), is("THANK YOU TOBY"));
     }
 }
