@@ -69,11 +69,12 @@ public class BeanFactory {
         return userService;
     }
 
+    // 인터페이스를 통한 데코레이터 정의
     @Bean
     public UserServiceTx userServiceTx(){
         UserServiceTx userServiceTx = new UserServiceTx();
         userServiceTx.setTransactionManager(transactionManager());
-        userServiceTx.setUserService(userServiceImpl());
+        userServiceTx.setUserService(userServiceImpl());        // 타깃 오브젝트 -> 런타임 시의 다이내믹한 구성 방법 
         return userServiceTx;
     }
 
