@@ -3,8 +3,10 @@ package com.training.spring.factory;
 import com.training.spring.dao.ConnectionMaker;
 import com.training.spring.dao.DConnectionMaker;
 import com.training.spring.dao.UserDaoJdbc;
+import com.training.spring.service.UserService;
 import com.training.spring.service.UserServiceImpl;
 import com.training.spring.service.UserServiceTx;
+import com.training.spring.transaction.TxProxyFactoryBean;
 import com.training.spring.util.DummyMailSender;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -69,11 +71,12 @@ public class BeanFactory {
         return userService;
     }
 
+    // 인터페이스를 통한 데코레이터 정의
     @Bean
     public UserServiceTx userServiceTx(){
         UserServiceTx userServiceTx = new UserServiceTx();
         userServiceTx.setTransactionManager(transactionManager());
-        userServiceTx.setUserService(userServiceImpl());
+        userServiceTx.setUserService(userServiceImpl());        // 타깃 오브젝트 -> 런타임 시의 다이내믹한 구성 방법 
         return userServiceTx;
     }
 
@@ -91,5 +94,15 @@ public class BeanFactory {
     @Bean
     public MailSender dummyMailSender(){
         return new DummyMailSender();
+    }
+
+    @Bean
+    public TxProxyFactoryBean userService(){
+        TxProxyFactoryBean userService = new TxProxyFactoryBean();
+        userService.setTarget(userServiceImpl());
+        userService.setTransactionManager(transactionManager());
+        userService.setPattern("upgradeLevels");
+        userService.setServiceInterface(UserService.class);
+        return userService;
     }
 }

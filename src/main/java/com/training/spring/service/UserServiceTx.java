@@ -6,6 +6,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 public class UserServiceTx implements UserService{
+    // [프록시의 기능 구분] 타깃 오브젝트
     UserService userService;
 
     public void setUserService(UserService userService){
@@ -19,6 +20,7 @@ public class UserServiceTx implements UserService{
     }
 
 
+    // [프록시의 기능 구분] 메소드의 구현과 위임
     @Override
     public void add(User user) {
         userService.add(user);
@@ -26,15 +28,18 @@ public class UserServiceTx implements UserService{
 
     @Override
     public void upgradeLevels() {
+        // [프록시의 기능 구분] 부가 기능 수행
         // 트랜잭션에 대한 조작이 필요할 때 전달해줄 데이터
         TransactionStatus status = this.transactionManager.getTransaction(new DefaultTransactionDefinition());
 
         try {
-            userService.upgradeLevels();
+            userService.upgradeLevels();    // [프록시의 기능 구분] 위임
 
+            // [프록시의 기능 구분] 부가 기능 수행
             this.transactionManager.commit(status);      // COMMIT
 
         } catch (Exception e){
+            // [프록시의 기능 구분] 부가 기능 수행
             transactionManager.rollback(status);    // ROLLBACK
             throw e;
         }
