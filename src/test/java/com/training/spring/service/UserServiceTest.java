@@ -5,6 +5,7 @@ import com.training.spring.dao.UserDaoJdbc;
 import com.training.spring.domain.Level;
 import com.training.spring.domain.User;
 import com.training.spring.factory.BeanFactory;
+import com.training.spring.transaction.TransactionHandler;
 import com.training.spring.util.DummyMailSender;
 import com.training.spring.util.MockMailSender;
 import org.junit.Before;
@@ -19,6 +20,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.lang.reflect.Proxy;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -177,9 +179,16 @@ public class UserServiceTest {
         testUserService.setTransactionManager(transactionManager);
         testUserService.setMailSender(mailSender);
 
-        UserServiceTx txUserService = new UserServiceTx();
-        txUserService.setTransactionManager(transactionManager);
-        txUserService.setUserService(testUserService);
+        TransactionHandler txHandler = new TransactionHandler();
+        txHandler.setTarget(testUserService);
+        txHandler.setTransactionManager(transactionManager);
+        txHandler.setPattern("upgradeLevels");
+
+        // UserService 인터페이스 타입의 다이나믹 프록시 생성
+        UserService txUserService = (UserService) Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class[]{UserService.class},
+                txHandler
+                );
 
         userDao.deleteAll();
         for(User user : userList){
