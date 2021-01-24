@@ -3,8 +3,10 @@ package com.training.spring.factory;
 import com.training.spring.dao.ConnectionMaker;
 import com.training.spring.dao.DConnectionMaker;
 import com.training.spring.dao.UserDaoJdbc;
+import com.training.spring.service.UserService;
 import com.training.spring.service.UserServiceImpl;
 import com.training.spring.service.UserServiceTx;
+import com.training.spring.transaction.TxProxyFactoryBean;
 import com.training.spring.util.DummyMailSender;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -92,5 +94,15 @@ public class BeanFactory {
     @Bean
     public MailSender dummyMailSender(){
         return new DummyMailSender();
+    }
+
+    @Bean
+    public TxProxyFactoryBean userService(){
+        TxProxyFactoryBean userService = new TxProxyFactoryBean();
+        userService.setTarget(userServiceImpl());
+        userService.setTransactionManager(transactionManager());
+        userService.setPattern("upgradeLevels");
+        userService.setServiceInterface(UserService.class);
+        return userService;
     }
 }

@@ -6,6 +6,7 @@ import com.training.spring.domain.Level;
 import com.training.spring.domain.User;
 import com.training.spring.factory.BeanFactory;
 import com.training.spring.transaction.TransactionHandler;
+import com.training.spring.transaction.TxProxyFactoryBean;
 import com.training.spring.util.DummyMailSender;
 import com.training.spring.util.MockMailSender;
 import org.junit.Before;
@@ -49,6 +50,9 @@ public class UserServiceTest {
     @Autowired
     MailSender mailSender;
 
+    @Autowired
+    TxProxyFactoryBean txProxyFactoryBean;
+
     List<User> userList;
 
     @Before
@@ -60,6 +64,10 @@ public class UserServiceTest {
 //        this.dataSource = context.getBean("dataSource", DataSource.class);
         this.transactionManager = context.getBean("transactionManager", DataSourceTransactionManager.class);
         this.mailSender = context.getBean("dummyMailSender", DummyMailSender.class);
+
+        // 팩토리 빈 자체를 가져와야 하므로 빈에 &을 넣어야 한다
+        this.txProxyFactoryBean = context.getBean("&userService", TxProxyFactoryBean.class);        // 테스트용 타깃 DI
+
     }
 
     @Before
@@ -173,22 +181,15 @@ public class UserServiceTest {
     }
 
     @Test
-    public void upgradeAllOrNothing(){
+    @DirtiesContext     // 다이나믹 프록시 팩토리 빈을 직접 만들어 사용할때는 없앴다가 다시 등장 -> 컨텍스트 무효화 어노테이션
+    public void upgradeAllOrNothing() throws Exception {
         UserServiceImpl testUserService = new TestUserService(userList.get(3).getId());
         testUserService.setUserDao(this.userDao);       // 수동 DI
         testUserService.setTransactionManager(transactionManager);
         testUserService.setMailSender(mailSender);
 
-        TransactionHandler txHandler = new TransactionHandler();
-        txHandler.setTarget(testUserService);
-        txHandler.setTransactionManager(transactionManager);
-        txHandler.setPattern("upgradeLevels");
-
-        // UserService 인터페이스 타입의 다이나믹 프록시 생성
-        UserService txUserService = (UserService) Proxy.newProxyInstance(getClass().getClassLoader(),
-                new Class[]{UserService.class},
-                txHandler
-                );
+        txProxyFactoryBean.setTarget(testUserService);
+        UserService txUserService = (UserService) txProxyFactoryBean.getObject();
 
         userDao.deleteAll();
         for(User user : userList){
