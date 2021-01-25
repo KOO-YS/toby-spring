@@ -6,8 +6,12 @@ import com.training.spring.dao.UserDaoJdbc;
 import com.training.spring.service.UserService;
 import com.training.spring.service.UserServiceImpl;
 import com.training.spring.service.UserServiceTx;
+import com.training.spring.transaction.TransactionAdvice;
 import com.training.spring.transaction.TxProxyFactoryBean;
 import com.training.spring.util.DummyMailSender;
+import org.springframework.aop.framework.ProxyFactoryBean;
+import org.springframework.aop.support.DefaultPointcutAdvisor;
+import org.springframework.aop.support.NameMatchMethodPointcut;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -96,13 +100,43 @@ public class BeanFactory {
         return new DummyMailSender();
     }
 
+//    @Bean
+//    public TxProxyFactoryBean userService(){
+//        TxProxyFactoryBean userService = new TxProxyFactoryBean();
+//        userService.setTarget(userServiceImpl());
+//        userService.setTransactionManager(transactionManager());
+//        userService.setPattern("upgradeLevels");
+//        userService.setServiceInterface(UserService.class);
+//        return userService;
+//    }
+
     @Bean
-    public TxProxyFactoryBean userService(){
-        TxProxyFactoryBean userService = new TxProxyFactoryBean();
+    public ProxyFactoryBean userService(){
+        ProxyFactoryBean userService = new ProxyFactoryBean();
         userService.setTarget(userServiceImpl());
-        userService.setTransactionManager(transactionManager());
-        userService.setPattern("upgradeLevels");
-        userService.setServiceInterface(UserService.class);
+        userService.setInterceptorNames("transactionAdvisor");
         return userService;
+    }
+
+    @Bean
+    public TransactionAdvice transactionAdvice(){
+        TransactionAdvice advice = new TransactionAdvice();
+        advice.setTransactionManager(transactionManager());
+        return advice;
+    }
+
+    @Bean
+    public NameMatchMethodPointcut transaactionPointcut(){
+        NameMatchMethodPointcut pointcut = new NameMatchMethodPointcut();
+        pointcut.setMappedName("upgrade*");
+        return pointcut;
+    }
+
+    @Bean
+    public DefaultPointcutAdvisor transactionAdvisor(){
+        DefaultPointcutAdvisor advisor = new DefaultPointcutAdvisor();
+        advisor.setAdvice(transactionAdvice());
+        advisor.setPointcut(transaactionPointcut());
+        return advisor;
     }
 }
