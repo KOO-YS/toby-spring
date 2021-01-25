@@ -12,6 +12,7 @@ import com.training.spring.util.MockMailSender;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -50,8 +51,11 @@ public class UserServiceTest {
     @Autowired
     MailSender mailSender;
 
+//    @Autowired
+//    TxProxyFactoryBean txProxyFactoryBean;
+
     @Autowired
-    TxProxyFactoryBean txProxyFactoryBean;
+    ProxyFactoryBean proxyFactoryBean;
 
     List<User> userList;
 
@@ -66,7 +70,9 @@ public class UserServiceTest {
         this.mailSender = context.getBean("dummyMailSender", DummyMailSender.class);
 
         // 팩토리 빈 자체를 가져와야 하므로 빈에 &을 넣어야 한다
-        this.txProxyFactoryBean = context.getBean("&userService", TxProxyFactoryBean.class);        // 테스트용 타깃 DI
+//        this.txProxyFactoryBean = context.getBean("&userService", TxProxyFactoryBean.class);        // 테스트용 타깃 DI
+
+        this.proxyFactoryBean = context.getBean("&userService", ProxyFactoryBean.class);        // 테스트용 타깃 DI
 
     }
 
@@ -188,8 +194,9 @@ public class UserServiceTest {
         testUserService.setTransactionManager(transactionManager);
         testUserService.setMailSender(mailSender);
 
-        txProxyFactoryBean.setTarget(testUserService);
-        UserService txUserService = (UserService) txProxyFactoryBean.getObject();
+        proxyFactoryBean.setTarget(testUserService);
+        UserService userService = (UserService) proxyFactoryBean.getObject();
+
 
         userDao.deleteAll();
         for(User user : userList){
@@ -198,7 +205,7 @@ public class UserServiceTest {
 
         try {
             // 트랜잭션 기능을 분리한 오브젝트를 통해 예외 발생용 TestUserService가 호출되게 해야 한다
-            txUserService.upgradeLevels();                // 이 메소드가 정상 종료 되면 안된다!
+            userService.upgradeLevels();                // 이 메소드가 정상 종료 되면 안된다!
             fail("TestUserServiceException expected ");
         } catch (TestUserService.TestUserServiceException e){
 
