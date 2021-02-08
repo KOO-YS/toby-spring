@@ -3,12 +3,12 @@ package com.training.spring.factory;
 import com.training.spring.dao.ConnectionMaker;
 import com.training.spring.dao.DConnectionMaker;
 import com.training.spring.dao.UserDaoJdbc;
-import com.training.spring.service.UserService;
+import com.training.spring.service.TestUserService;
 import com.training.spring.service.UserServiceImpl;
 import com.training.spring.service.UserServiceTx;
 import com.training.spring.transaction.TransactionAdvice;
-import com.training.spring.transaction.TxProxyFactoryBean;
 import com.training.spring.util.DummyMailSender;
+import org.springframework.aop.aspectj.AspectJExpressionPointcut;
 import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.NameMatchMethodPointcut;
@@ -18,7 +18,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.mail.MailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
-import org.springframework.transaction.TransactionManager;
 
 import javax.sql.DataSource;
 
@@ -138,5 +137,21 @@ public class BeanFactory {
         advisor.setAdvice(transactionAdvice());
         advisor.setPointcut(transaactionPointcut());
         return advisor;
+    }
+
+    @Bean
+    public TestUserService testUserService(){
+        TestUserService test = new TestUserService();
+        test.setUserDao(userDaoJdbc());
+        test.setTransactionManager(transactionManager());
+        test.setMailSender(dummyMailSender());
+        return test;
+    }
+
+    @Bean
+    public AspectJExpressionPointcut transactionPointcut(){
+        AspectJExpressionPointcut pointcut = new AspectJExpressionPointcut();
+        pointcut.setExpression("execution(* *..*ServiceImpl.upgrade*(..))");
+        return pointcut;
     }
 }
