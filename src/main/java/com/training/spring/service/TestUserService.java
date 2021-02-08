@@ -1,13 +1,13 @@
 package com.training.spring.service;
 
 import com.training.spring.domain.User;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
 public class TestUserService extends UserServiceImpl {
-    private String id;
+    private String id = "madnite1";
 
-    TestUserService(String id){
+    public TestUserService(){}
+
+    public TestUserService(String id){
         this.id = id;       // 예외를 발생시킬 User 오브젝트 지정
     }
 

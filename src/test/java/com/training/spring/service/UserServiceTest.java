@@ -5,8 +5,6 @@ import com.training.spring.dao.UserDaoJdbc;
 import com.training.spring.domain.Level;
 import com.training.spring.domain.User;
 import com.training.spring.factory.BeanFactory;
-import com.training.spring.transaction.TransactionHandler;
-import com.training.spring.transaction.TxProxyFactoryBean;
 import com.training.spring.util.DummyMailSender;
 import com.training.spring.util.MockMailSender;
 import org.junit.Before;
@@ -22,7 +20,6 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.lang.reflect.Proxy;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,6 +42,8 @@ public class UserServiceTest {
 
     @Autowired
     UserServiceImpl userServiceImpl;
+    @Autowired
+    TestUserService testUserServiceImpl;
 
     @Autowired
     private PlatformTransactionManager transactionManager;
@@ -64,11 +63,11 @@ public class UserServiceTest {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(BeanFactory.class);
         this.userServiceTx = context.getBean("userServiceTx", UserServiceTx.class);
         this.userServiceImpl = context.getBean("userServiceImpl", UserServiceImpl.class);
+        this.testUserServiceImpl = context.getBean("testUserService", TestUserService.class);
         this.userDao = context.getBean("userDaoJdbc", UserDaoJdbc.class);
 //        this.dataSource = context.getBean("dataSource", DataSource.class);
         this.transactionManager = context.getBean("transactionManager", DataSourceTransactionManager.class);
         this.mailSender = context.getBean("dummyMailSender", DummyMailSender.class);
-
         // 팩토리 빈 자체를 가져와야 하므로 빈에 &을 넣어야 한다
 //        this.txProxyFactoryBean = context.getBean("&userService", TxProxyFactoryBean.class);        // 테스트용 타깃 DI
 
@@ -176,8 +175,8 @@ public class UserServiceTest {
         User userWithoutLevel = userList.get(0);
         userWithoutLevel.setLevel(null);    // 레벨이 비어있는 사용자로 설정 -> BASIC으로 자동 설정 요구
 
-        userServiceTx.add(userWithLevel);
-        userServiceTx.add(userWithoutLevel);
+        userServiceImpl.add(userWithLevel);
+        userServiceImpl.add(userWithoutLevel);
 
         User userWithLevelRead = userDao.get(userWithLevel.getId());
         User userWithoutLevelRead = userDao.get(userWithoutLevel.getId());
@@ -189,14 +188,10 @@ public class UserServiceTest {
     @Test
     @DirtiesContext     // 다이나믹 프록시 팩토리 빈을 직접 만들어 사용할때는 없앴다가 다시 등장 -> 컨텍스트 무효화 어노테이션
     public void upgradeAllOrNothing() throws Exception {
-        UserServiceImpl testUserService = new TestUserService(userList.get(3).getId());
-        testUserService.setUserDao(this.userDao);       // 수동 DI
-        testUserService.setTransactionManager(transactionManager);
-        testUserService.setMailSender(mailSender);
-
-        proxyFactoryBean.setTarget(testUserService);
-        UserService userService = (UserService) proxyFactoryBean.getObject();
-
+//        UserServiceImpl testUserService = new TestUserServiceImpl(userList.get(3).getId());
+        testUserServiceImpl.setUserDao(this.userDao);       // 수동 DI
+        testUserServiceImpl.setTransactionManager(transactionManager);
+        testUserServiceImpl.setMailSender(mailSender);
 
         userDao.deleteAll();
         for(User user : userList){
@@ -205,8 +200,8 @@ public class UserServiceTest {
 
         try {
             // 트랜잭션 기능을 분리한 오브젝트를 통해 예외 발생용 TestUserService가 호출되게 해야 한다
-            userService.upgradeLevels();                // 이 메소드가 정상 종료 되면 안된다!
-            fail("TestUserServiceException expected ");
+            testUserServiceImpl.upgradeLevels();                // 이 메소드가 정상 종료 되면 안된다!
+            fail("TestUserServiceException expected 발생");
         } catch (TestUserService.TestUserServiceException e){
 
         }
