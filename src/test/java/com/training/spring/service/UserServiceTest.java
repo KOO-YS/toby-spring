@@ -258,4 +258,10 @@ public class UserServiceTest {
         }
 
     }
+
+    @Test
+    public void readOnlyTransactionAttribute(){
+        testUserServiceImpl.getAll();
+        // 정상적인 실행이라면 여기서 읽기 전용 속성을 위반했기 때문에 예외가 발생
+    }
 }

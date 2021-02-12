@@ -5,7 +5,29 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
+import java.util.List;
+
 public class UserServiceTx implements UserService{
+    @Override
+    public User get(String id) {
+        return null;
+    }
+
+    @Override
+    public List<User> getAll() {
+        return null;
+    }
+
+    @Override
+    public void deleteAll() {
+
+    }
+
+    @Override
+    public void update(User user) {
+
+    }
+
     // [프록시의 기능 구분] 타깃 오브젝트
     UserService userService;
 
