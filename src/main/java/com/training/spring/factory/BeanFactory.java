@@ -6,6 +6,7 @@ import com.training.spring.dao.UserDaoJdbc;
 import com.training.spring.service.TestUserService;
 import com.training.spring.service.UserServiceImpl;
 import com.training.spring.service.UserServiceTx;
+import com.training.spring.sqlservice.SimpleSqlService;
 import com.training.spring.transaction.TransactionAdvice;
 import com.training.spring.util.DummyMailSender;
 import org.springframework.aop.aspectj.AspectJExpressionPointcut;
@@ -20,21 +21,14 @@ import org.springframework.mail.MailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration          // -> 오브젝트 설정을 담당하는 클래스 인식
 public class BeanFactory {
 
     @Bean
     public DataSource dataSource(){
-//        SimpleDriverDataSource dataSource = new SimpleDriverDataSource();
-        // DB 연결정보를 수정자 메소드를 통해 넣어준다 [오브젝트 레벨에서 DB 연결 방식]
-//        dataSource.setDriverClass(com.mysql.cj.jdbc.Driver.class);     // Cannot resolve symbol 'Driver' -> File -> invalidate Caches/restart
-//        dataSource.setUrl("jdbc:mysql://localhost/toby?characterEncoding=UTF-8&serverTimezone=UTC");
-//        dataSource.setUsername("root");
-//        dataSource.setPassword("root");
-
-//        return dataSource;
-
         DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create();
         dataSourceBuilder.driverClassName("com.mysql.cj.jdbc.Driver");
         dataSourceBuilder.url("jdbc:mysql://localhost/toby?characterEncoding=UTF-8&serverTimezone=UTC");
@@ -51,18 +45,11 @@ public class BeanFactory {
     @Bean               // -> 오브젝트 생성 메소드를 위함
     public UserDaoJdbc userDaoJdbc(){
 
-        // delete & add 를 위한 
-//        JdbcContext jdbcContext = new JdbcContext();
-//        jdbcContext.setConnectionMaker(connectionMaker());
-//        jdbcContext.setDataSource(dataSource());        // DataSource 추가
-        
-        // 기존 메소드들을 위해 남겨둠
         UserDaoJdbc userDao = new UserDaoJdbc();
+        userDao.setSqlService(sqlService());
         userDao.setConnectionMaker(connectionMaker());
-//        userDao.setJdbcContext(jdbcContext);        // userDao에 jdbcContext 연결
         userDao.setDataSource(dataSource());        // DataSource 추가
         return userDao;
-//        return new UserDao(connectionMaker());      // 이 메소드 안에서 connection 정보를 바꿀 일이 없어졌다
     }
 
     @Bean
@@ -98,16 +85,6 @@ public class BeanFactory {
     public MailSender dummyMailSender(){
         return new DummyMailSender();
     }
-
-//    @Bean
-//    public TxProxyFactoryBean userService(){
-//        TxProxyFactoryBean userService = new TxProxyFactoryBean();
-//        userService.setTarget(userServiceImpl());
-//        userService.setTransactionManager(transactionManager());
-//        userService.setPattern("upgradeLevels");
-//        userService.setServiceInterface(UserService.class);
-//        return userService;
-//    }
 
     @Bean
     public ProxyFactoryBean userService(){
@@ -153,5 +130,22 @@ public class BeanFactory {
         AspectJExpressionPointcut pointcut = new AspectJExpressionPointcut();
         pointcut.setExpression("execution(* *..*ServiceImpl.upgrade*(..))");
         return pointcut;
+    }
+
+    @Bean
+    public SimpleSqlService sqlService(){
+        SimpleSqlService service = new SimpleSqlService();
+        Map<String, String> map = new HashMap<>();
+        map.put("userAdd", "INSERT INTO users(id, name, password, level, login, recommend, email) VALUES(?,?,?,?,?,?,?)");
+        map.put("userGet","SELECT * FROM users WHERE id = ?");
+        map.put("userGetAll","SELECT * FROM users ORDER BY id");
+        map.put("userDeleteAll","DELETE FROM users");
+        map.put("userGetCount","SELECT COUNT(*) FROM users");
+        map.put("userUpdate","UPDATE users SET name=?, password=?, level=?, login=?, recommend=?, email=? where id=?");
+
+
+        service.setSqlMap(map);
+
+        return service;
     }
 }

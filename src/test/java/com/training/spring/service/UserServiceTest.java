@@ -5,6 +5,8 @@ import com.training.spring.dao.UserDaoJdbc;
 import com.training.spring.domain.Level;
 import com.training.spring.domain.User;
 import com.training.spring.factory.BeanFactory;
+import com.training.spring.sqlservice.SimpleSqlService;
+import com.training.spring.sqlservice.SqlService;
 import com.training.spring.util.DummyMailSender;
 import com.training.spring.util.MockMailSender;
 import org.junit.Before;
@@ -41,6 +43,9 @@ public class UserServiceTest {
     UserDao userDao;
 
     @Autowired
+    SqlService sqlService;
+
+    @Autowired
     UserServiceImpl userServiceImpl;
     @Autowired
     TestUserService testUserServiceImpl;
@@ -70,7 +75,7 @@ public class UserServiceTest {
         this.mailSender = context.getBean("dummyMailSender", DummyMailSender.class);
         // 팩토리 빈 자체를 가져와야 하므로 빈에 &을 넣어야 한다
 //        this.txProxyFactoryBean = context.getBean("&userService", TxProxyFactoryBean.class);        // 테스트용 타깃 DI
-
+        this.sqlService = context.getBean("sqlService", SimpleSqlService.class);
         this.proxyFactoryBean = context.getBean("&userService", ProxyFactoryBean.class);        // 테스트용 타깃 DI
 
     }

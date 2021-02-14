@@ -4,6 +4,8 @@ import com.training.spring.domain.Level;
 import com.training.spring.domain.User;
 import com.training.spring.exception.DuplicateUserIdException;
 import com.training.spring.factory.BeanFactory;
+import com.training.spring.sqlservice.SimpleSqlService;
+import com.training.spring.sqlservice.SqlService;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,9 @@ public class UserDaoTest {
     @Autowired
     private DataSource dataSource;
 
+    @Autowired
+    private SqlService sqlService;
+
     User user1;
     User user2;
     User user3;
@@ -43,6 +48,7 @@ public class UserDaoTest {
         // ** 구현 기술이 달라진다면 구현 클래스를 여기서 변경해줌!
         this.dao = context.getBean("userDaoJdbc", UserDaoJdbc.class);
         this.dataSource = context.getBean("dataSource", DataSource.class);
+        this.sqlService = context.getBean("sqlService", SimpleSqlService.class);
 
         this.user1 = new User("Kim", "김씨", "qwerty", Level.BASIC, 1, 0, "yaans@yaans.com");
         this.user2 = new User("Lee", "이씨", "123456", Level.SILVER, 55, 10, "yaans@yaans.com");

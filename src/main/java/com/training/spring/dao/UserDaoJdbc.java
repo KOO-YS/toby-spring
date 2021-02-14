@@ -4,6 +4,7 @@ import com.mysql.cj.exceptions.MysqlErrorNumbers;
 import com.training.spring.domain.Level;
 import com.training.spring.domain.User;
 import com.training.spring.exception.DuplicateUserIdException;
+import com.training.spring.sqlservice.SqlService;
 import com.training.spring.strategy.StatementStrategy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
@@ -20,6 +21,8 @@ import java.util.List;
 
 // 클래스 분리로 인한 상속 제거
 public class UserDaoJdbc implements UserDao{
+
+    private SqlService sqlService;
 
     private JdbcTemplate jdbcTemplate;
 
@@ -44,6 +47,10 @@ public class UserDaoJdbc implements UserDao{
         }
     };
 
+    public void setSqlService(SqlService sqlService){
+        this.sqlService = sqlService;
+    }
+
     public void setDataSource(DataSource dataSource){
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
@@ -60,7 +67,7 @@ public class UserDaoJdbc implements UserDao{
     public void add(User user) throws DuplicateUserIdException{     // 애플리케이션 레벨의 체크 예외
         // JdbcTemplate 이용
         try {
-            this.jdbcTemplate.update("INSERT INTO users(id, name, password, level, login, recommend, email) VALUES(?,?,?,?,?,?,?)", user.getId(), user.getName(), user.getPassword(), user.getLevel().intValue(), user.getLogin(), user.getRecommend(), user.getEmail());
+            this.jdbcTemplate.update(this.sqlService.getSql("userAdd"), user.getId(), user.getName(), user.getPassword(), user.getLevel().intValue(), user.getLogin(), user.getRecommend(), user.getEmail());
         } catch (DuplicateKeyException e){  // DataAccessException의 서브 클래스 DuplicateKeyExceptio으로 매핑되어 던져진다
             throw new DuplicateUserIdException(e);  // 중첩 예외
         }
@@ -68,43 +75,26 @@ public class UserDaoJdbc implements UserDao{
 
     @Override
     public void deleteAll(){
-        // Spring에서 지원해주는 Jdbc Template 사용
-        this.jdbcTemplate.update("DELETE FROM users");
+        this.jdbcTemplate.update(this.sqlService.getSql("userDeleteAll"));
     }
 
     @Override
     public User get(String id){
-        // Spring에서 지원해주는 Jdbc Template 사용
-        return this.jdbcTemplate.queryForObject("SELECT * FROM users WHERE id = ?", new Object[]{id}, this.userMapper);
+        return this.jdbcTemplate.queryForObject(this.sqlService.getSql("userGet"), new Object[]{id}, this.userMapper);
     }
 
     @Override
     public int getCount(){
-        // Spring에서 지원해주는 Jdbc Template 사용 1
-//        return this.jdbcTemplate.query(new PreparedStatementCreator() {
-//            @Override
-//            public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-//                return con.prepareStatement("SELECT COUNT(*) FROM users");
-//            }
-//        }, new ResultSetExtractor<Integer>() {
-//            @Override
-//            public Integer extractData(ResultSet rs) throws SQLException, DataAccessException {
-//                rs.next();
-//                return rs.getInt(1);
-//            }
-//        });
-        // Spring에서 지원해주는 Jdbc Template 사용 2
-        return this.jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.TYPE);
+        return this.jdbcTemplate.queryForObject(this.sqlService.getSql("userGetCount"), Integer.TYPE);
     }
 
     @Override
     public List<User> getAll() {
-        return this.jdbcTemplate.query("SELECT * FROM users ORDER BY id", this.userMapper);
+        return this.jdbcTemplate.query(this.sqlService.getSql("userGetAll"), this.userMapper);
     }
 
     @Override
     public void update(User user) {
-        this.jdbcTemplate.update("UPDATE users SET name=?, password=?, level=?, login=?, recommend=?, email=?" +
-                                        " where id=?", user.getName(), user.getPassword(), user.getLevel().intValue(), user.getLogin(), user.getRecommend(), user.getEmail(), user.getId());
+        this.jdbcTemplate.update(this.sqlService.getSql("userUpdate"), user.getName(), user.getPassword(), user.getLevel().intValue(), user.getLogin(), user.getRecommend(), user.getEmail(), user.getId());
     }
 }
