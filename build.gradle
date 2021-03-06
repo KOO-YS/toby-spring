@@ -36,6 +36,10 @@ dependencies {
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-mail', version: '2.2.6.RELEASE'
 // https://mvnrepository.com/artifact/org.aspectj/aspectjtools
     compile group: 'org.aspectj', name: 'aspectjtools', version: '1.8.9'
+    // https://mvnrepository.com/artifact/org.hsqldb/com.springsource.org.hsqldb
+//    testImplementation group: 'org.hsqldb', name: 'com.springsource.org.hsqldb', version: '1.8.0.9'
+// https://mvnrepository.com/artifact/org.hsqldb/hsqldb
+    testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.5.1'
 
 }
 
