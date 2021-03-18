@@ -1,5 +1,6 @@
 package com.training.spring.dao;
 
+import com.training.spring.TestApplicationContext;
 import com.training.spring.domain.Level;
 import com.training.spring.domain.User;
 import com.training.spring.exception.DuplicateUserIdException;
@@ -15,6 +16,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 import org.springframework.jdbc.support.SQLExceptionTranslator;
+import org.springframework.test.context.ContextConfiguration;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
@@ -23,7 +25,10 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+
+
 @SpringBootTest
+@ContextConfiguration(classes = TestApplicationContext.class)
 public class UserDaoTest {
 //    public static void main(String[] args) {
 //        JUnitCore.main("com.training.spring.dao.UserDaoTest");
@@ -44,7 +49,8 @@ public class UserDaoTest {
 
     @Before     // @Test 메소드가 실행되기 전 먼저 실행해야하는 메소드 정의
     public void setUp(){
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(BeanFactory.class);
+        AnnotationConfigApplicationContext context1 = new AnnotationConfigApplicationContext(BeanFactory.class);
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(TestApplicationContext.class);
         // ** 구현 기술이 달라진다면 구현 클래스를 여기서 변경해줌!
         this.dao = context.getBean("userDaoJdbc", UserDaoJdbc.class);
         this.dataSource = context.getBean("dataSource", DataSource.class);
