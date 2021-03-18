@@ -6,6 +6,7 @@ import com.training.spring.domain.User;
 import com.training.spring.exception.DuplicateUserIdException;
 import com.training.spring.sqlservice.SqlService;
 import com.training.spring.strategy.StatementStrategy;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -47,6 +48,7 @@ public class UserDaoJdbc implements UserDao{
         }
     };
 
+    @Autowired
     public void setSqlService(SqlService sqlService){
         this.sqlService = sqlService;
     }

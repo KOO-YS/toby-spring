@@ -1,5 +1,6 @@
 package com.training.spring.service;
 
+import com.training.spring.TestApplicationContext;
 import com.training.spring.dao.UserDao;
 import com.training.spring.dao.UserDaoJdbc;
 import com.training.spring.domain.Level;
@@ -65,7 +66,8 @@ public class UserServiceTest {
 
     @Before
     public void setUpBean(){
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(BeanFactory.class);
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(TestApplicationContext.class);
+//        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(BeanFactory.class);
         this.userServiceTx = context.getBean("userServiceTx", UserServiceTx.class);
         this.userServiceImpl = context.getBean("userServiceImpl", UserServiceImpl.class);
         this.testUserServiceImpl = context.getBean("testUserService", TestUserService.class);
